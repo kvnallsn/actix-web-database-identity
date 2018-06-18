@@ -1,0 +1,15 @@
+[package]
+name = "actix-web-db-identity"
+version = "0.0.1"
+authors = ["Kevin Allison <kvnallsn@gmail.com>"]
+
+[dependencies]
+actix = "0.5"
+actix-web = "0.6"
+failure = "*"
+failure_derive = "*"
+futures = "0.1"
+
+[dependencies.diesel]
+version = "1.3"
+features = ["r2d2", "sqlite"]
