@@ -29,7 +29,7 @@ use actix_web::middleware::identity::{Identity, IdentityPolicy};
 use futures::Future;
 
 // (Local) Sql Imports
-use sql::{FindIdentity, SqlActor, SqlIdentityModel};
+use sql::{FindIdentity, UpdateIdentity, SqlActor, SqlIdentityModel};
 
 /// Error representing different failure cases
 #[derive(Debug, Fail)]
@@ -80,7 +80,7 @@ impl Identity for SqlIdentity {
     /// * `resp` - HTTP response to modify
     fn write(&mut self, resp: HttpResponse) -> Result<Response, ActixWebError> {
         if self.changed {
-            self.inner.save();
+            self.inner.save(self.identity.clone());
         }
 
         Ok(Response::Done(resp))
@@ -104,8 +104,18 @@ impl SqlIdentityInner {
         }
     }
 
-    fn save(&self) {
+    fn save(&self, identity: Option<String>) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
         // TODO: Make it actually save
+
+        return Box::new(
+            self.addr
+                .send(UpdateIdentity { token: identity.unwrap(), userid: 1 })
+                .map_err(ActixWebError::from)
+                .and_then(move |res| match res {
+                    Ok(_) => Ok(HttpResponse::Ok().finish()),
+                    Err(_) => Ok(HttpResponse::InternalServerError().finish()),
+                }),
+        );
     }
 
     /// Loads an identity from the backend provider
@@ -121,7 +131,7 @@ impl SqlIdentityInner {
                     Ok(val) => Ok(Some(val)),
                     Err(_) => Ok(None),
                 }),
-            );
+        );
     }
 }
 

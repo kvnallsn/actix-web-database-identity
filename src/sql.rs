@@ -6,7 +6,7 @@ use actix::prelude::{Actor, Handler, Message, Syn};
 use actix::sync::{SyncArbiter, SyncContext};
 
 // Diesel (SQL ORM) Imports
-use diesel::{ExpressionMethods, RunQueryDsl, QueryDsl};
+use diesel::{ExpressionMethods, RunQueryDsl, QueryDsl, replace_into};
 use diesel::sqlite::SqliteConnection;
 use diesel::r2d2::{ConnectionManager, Pool};
 
@@ -16,16 +16,16 @@ use failure::Error;
 use super::SqlIdentityError;
 
 table! {
-    identities (id) {
-        id -> Integer,
+    identities (token) {
         token -> Text,
+        userid -> Integer,
     }
 }
 
 #[derive(Queryable)]
 pub struct SqlIdentityModel {
-    pub id: i32,
-    pub token: String
+    pub token: String,
+    pub userid: i32,
 }
 
 /// Represents the different types of pools available
@@ -87,5 +87,34 @@ impl Handler<FindIdentity> for SqlActor {
         }
 
         Err(SqlIdentityError::SqlTokenNotFound.into())
+    }
+}
+
+/// Inserts or Updates an Identity
+#[derive(Insertable)]
+#[table_name = "identities"]
+pub struct UpdateIdentity {
+    pub token: String,
+    pub userid: i32,
+}
+
+impl Message for UpdateIdentity {
+    type Result = Result<bool, Error>;
+}
+
+impl Handler<UpdateIdentity> for SqlActor {
+    type Result = Result<bool, Error>;
+
+    fn handle(&mut self, msg: UpdateIdentity, _: &mut Self::Context) -> Self::Result {
+        match self.0 {
+            SqlPool::SqlitePool(ref p) => {
+                use self::identities::dsl::*;
+
+                let conn: &SqliteConnection = &(*(p.get()?));
+                replace_into(identities).values(&msg).execute(conn)?;
+            }
+        }
+
+        Ok(true)
     }
 }
