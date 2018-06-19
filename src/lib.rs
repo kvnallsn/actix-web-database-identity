@@ -4,8 +4,10 @@
 
 extern crate actix;
 extern crate actix_web;
+extern crate base64;
 extern crate failure;
 extern crate futures;
+extern crate rand;
 
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate failure_derive;
@@ -20,24 +22,26 @@ use actix::Addr;
 use actix::prelude::Syn;
 
 // Actix Web imports
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use actix_web::error::{Error as ActixWebError};
-use actix_web::middleware::Response;
+use actix_web::middleware::{Response as MiddlewareResponse};
 use actix_web::middleware::identity::{Identity, IdentityPolicy};
 
 // Futures imports
 use futures::Future;
+use futures::future::{ok as FutOk};
 
 // (Local) Sql Imports
-use sql::{FindIdentity, UpdateIdentity, SqlActor, SqlIdentityModel};
+use sql::{DeleteIdentity, FindIdentity, UpdateIdentity, SqlActor, SqlIdentityModel};
+
+// Rand Imports (thread secure!)
+use rand::Rng;
 
 /// Error representing different failure cases
 #[derive(Debug, Fail)]
 enum SqlIdentityError {
-    #[fail(display = "sql variant not supported: {}", variant)]
-    SqlVariantNotSupported {
-        variant: String,
-    },
+    #[fail(display = "sql variant not supported")]
+    SqlVariantNotSupported,
 
     #[fail(display = "token not found")]
     SqlTokenNotFound,
@@ -47,6 +51,7 @@ enum SqlIdentityError {
 pub struct SqlIdentity {
     changed: bool,
     identity: Option<String>,
+    token: Option<String>,
     inner: Rc<SqlIdentityInner>,
 }
 
@@ -65,6 +70,11 @@ impl Identity for SqlIdentity {
     fn remember(&mut self, value: String) {
         self.changed = true;
         self.identity = Some(value);
+
+        // Generate a random token
+        let mut arr = [0u8; 24];
+        rand::thread_rng().fill(&mut arr[..]);
+        self.token = Some(base64::encode(&arr));
     }
 
     /// Forgets a user, by deleting the identity
@@ -78,12 +88,26 @@ impl Identity for SqlIdentity {
     /// # Arguments
     ///
     /// * `resp` - HTTP response to modify
-    fn write(&mut self, resp: HttpResponse) -> Result<Response, ActixWebError> {
-        if self.changed {
-            self.inner.save(self.identity.clone());
+    fn write(&mut self, resp: HttpResponse) -> Result<MiddlewareResponse, ActixWebError> {
+        let token = self.token.clone();
+
+        if let Some(ref token) = token {
+            if self.changed {
+                if let Some(ref identity) = self.identity {
+                    // Insert or update
+                    return Ok(MiddlewareResponse::Future(
+                            self.inner.save(token, identity, resp)
+                    ));
+                } else {
+                    // Delete token
+                    return Ok(MiddlewareResponse::Future(
+                            self.inner.remove(token, resp)
+                    ));
+                }
+            }
         }
 
-        Ok(Response::Done(resp))
+        Ok(MiddlewareResponse::Done(resp))
     }
 }
 
@@ -104,34 +128,75 @@ impl SqlIdentityInner {
         }
     }
 
-    fn save(&self, identity: Option<String>) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
-        // TODO: Make it actually save
+    /// Saves an identity to the backend provider (SQL database)
+    fn save(&self, token: &str, userid: &str, mut resp: HttpResponse) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
 
-        return Box::new(
+        {
+            // Add the new token/identity to response headers
+            let headers = resp.headers_mut();
+            headers.append("Twinscroll-Auth", token.parse().unwrap());
+        }
+
+        Box::new(
             self.addr
-                .send(UpdateIdentity { token: identity.unwrap(), userid: 1 })
+                .send(UpdateIdentity { token: token.to_string(), userid: userid.to_string() })
                 .map_err(ActixWebError::from)
                 .and_then(move |res| match res {
-                    Ok(_) => Ok(HttpResponse::Ok().finish()),
+                    Ok(_) => Ok(resp),
                     Err(_) => Ok(HttpResponse::InternalServerError().finish()),
                 }),
-        );
+        )
     }
 
-    /// Loads an identity from the backend provider
-    fn load<S>(&self, _req: &HttpRequest<S>) -> Box<Future<Item = Option<SqlIdentityModel>, Error = ActixWebError>> {
-        // TODO: Extract the Auth Header
+    /// Removes an identity from the backend provider (SQL database)
+    fn remove(&self, token: &str, resp: HttpResponse) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
 
-        // Return the identity (or none, if it doesn't exist)
-        return Box::new(
+        Box::new(
             self.addr
-                .send(FindIdentity { token: "test".to_string() })
+                .send(DeleteIdentity { token: token.to_string() })
                 .map_err(ActixWebError::from)
                 .and_then(move |res| match res {
-                    Ok(val) => Ok(Some(val)),
-                    Err(_) => Ok(None),
+                    Ok(_) => Ok(resp),
+                    Err(_) => Ok(HttpResponse::InternalServerError().finish()),
                 }),
-        );
+        )
+    }
+
+    /// Loads an identity from the backend provider (SQL database)
+    fn load<S>(&self, req: &HttpRequest<S>) -> Box<Future<Item = Option<SqlIdentityModel>, Error = ActixWebError>> {
+        let headers = req.headers();
+        let auth_header = headers.get("Authorization");
+
+        if let Some(auth_header) = auth_header {
+            // Return the identity (or none, if it doesn't exist)
+           
+            if let Ok(auth_header) = auth_header.to_str() {
+                let mut iter = auth_header.split(' ');
+                let scheme = iter.next();
+                let token = iter.next();
+
+                if scheme.is_some() && token.is_some() {
+                    let _scheme = scheme.unwrap();
+                    let token = token.unwrap();
+
+                    return Box::new(
+                        self.addr
+                            .send(FindIdentity { token: token.to_string() })
+                            .map_err(ActixWebError::from)
+                            .and_then(move |res| match res {
+                                Ok(val) => Ok(Some(val)),
+                                Err(_) => Ok(None),
+                            }),
+                    );
+                }
+            }
+
+            // return Box::new(FutErr(awerror::ErrorBadRequest("Invalid Authorization Header")));
+        }
+
+        // Box::new(FutErr(awerror::ErrorBadRequest("No Authorization Header")))
+
+        Box::new(FutOk(None))
     }
 }
 
@@ -139,13 +204,31 @@ impl SqlIdentityInner {
 pub struct SqlIdentityPolicy(Rc<SqlIdentityInner>);
 
 impl SqlIdentityPolicy {
-    /// Creates a new sqlite identity policy
+    /// Creates a new SQLite identity policy
     ///
     /// # Arguments
     ///
-    /// * `s` - Sqlite Connection String (e.g., sqlite://test.db)
+    /// * `s` - Sqlite connection string (e.g., sqlite://test.db)
     pub fn sqlite(s: &str) -> Result<SqlIdentityPolicy, Error> {
         Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::sqlite(3, s)?))))
+    }
+
+    /// Creates a new MySQL identity policy
+    ///
+    /// # Arguments
+    ///
+    /// * `s` - MySQL connection string
+    pub fn mysql(s: &str) -> Result<SqlIdentityPolicy, Error> {
+        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::mysql(3, s)?))))
+    }
+
+    /// Creates a new PostgreSQL identity policy
+    ///
+    /// # Arguments
+    ///
+    /// * `s` - PostgresSQL connection string (e.g., psql://user@localhost:3339)
+    pub fn postgres(s: &str) -> Result<SqlIdentityPolicy, Error> {
+        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::pg(3, s)?))))
     }
 }
 
@@ -164,13 +247,15 @@ impl<S> IdentityPolicy<S> for SqlIdentityPolicy {
         Box::new(self.0.load(req).map(move |ident| {
             if let Some(id) = ident {
                 SqlIdentity {
-                    identity: Some(id.token),
+                    identity: Some(id.userid),
+                    token: Some(id.token),
                     changed: false,
                     inner: inner,
                 }
             } else {
                 SqlIdentity {
                     identity: None,
+                    token: None,
                     changed: false,
                     inner: inner
                 }

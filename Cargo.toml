@@ -6,9 +6,11 @@ authors = ["Kevin Allison <kvnallsn@gmail.com>"]
 [dependencies]
 actix = "0.5"
 actix-web = "0.6"
+base64 = "0.9"
 failure = "*"
 failure_derive = "*"
 futures = "0.1"
+rand = "0.5"
 
 [dependencies.diesel]
 version = "1.3"
