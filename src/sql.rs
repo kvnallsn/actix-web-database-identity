@@ -7,8 +7,16 @@ use actix::sync::{SyncArbiter, SyncContext};
 
 // Diesel (SQL ORM) Imports
 use diesel::{self, ExpressionMethods, RunQueryDsl, QueryDsl};
-use diesel::sqlite::SqliteConnection;
 use diesel::r2d2::{ConnectionManager, Pool};
+
+#[cfg(feature = "sqlite")]
+use diesel::sqlite::SqliteConnection;
+
+#[cfg(feature = "mysql")]
+use diesel::mysql::MysqlConnection;
+
+#[cfg(feature = "postgres")]
+use diesel::pg::PgConnection;
 
 // Failure (error management system) Imports
 use failure::Error;
@@ -31,8 +39,14 @@ pub struct SqlIdentityModel {
 /// Represents the different types of pools available
 /// (e.g., SQLite, Postgresql, MySQL)
 enum SqlPool {
+    #[cfg(feature = "sqlite")]
     SqlitePool(Pool<ConnectionManager<SqliteConnection>>),
-    NotSupported,
+
+    #[cfg(feature = "mysql")]
+    MySqlPool(Pool<ConnectionManager<MysqlConnection>>),
+
+    #[cfg(feature = "postgres")]
+    PgPool(Pool<ConnectionManager<PgConnection>>),
 }
 
 /// Represents an actix SQL actor
@@ -46,12 +60,20 @@ impl SqlActor {
     /// * `n` - Number of threads
     /// * `s` - SQLite connection string
     pub fn sqlite(n: usize, s: &str) -> Result<Addr<Syn, SqlActor>, Error> {
-        let manager = ConnectionManager::<SqliteConnection>::new(s);
-        let pool = Pool::builder()
-            .build(manager)?;
+        #[cfg(feature = "sqlite")] {
+            let manager = ConnectionManager::<SqliteConnection>::new(s);
+            let pool = Pool::builder()
+                .build(manager)?;
 
-        let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::SqlitePool(pool.clone())));
-        Ok(addr)
+            let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::SqlitePool(pool.clone())));
+            Ok(addr)
+        } 
+
+        #[cfg(not(feature = "sqlite"))] {
+            let _ = n;
+            let _ = s;
+            Err(SqlIdentityError::SqlVariantNotSupported.into())
+        }
     }
 
     /// Creates a new MySQL Actor, for a connection to a MySQL database
@@ -61,8 +83,20 @@ impl SqlActor {
     /// * `n` - Number of threads
     /// * `s` - MySQL connection string
     pub fn mysql(n: usize, s: &str) -> Result<Addr<Syn, SqlActor>, Error> {
-        let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::NotSupported));
-        Ok(addr)
+        #[cfg(feature = "mysql")] {
+            let manager = ConnectionManager::<MysqlConnection>::new(s);
+            let pool = Pool::builder()
+                .build(manager)?;
+
+            let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::MySqlPool(pool.clone())));
+            Ok(addr)
+        } 
+
+        #[cfg(not(feature = "mysql"))] {
+            let _ = n;
+            let _ = s;
+            Err(SqlIdentityError::SqlVariantNotSupported.into())
+        }
     }
 
     /// Creates a new PostgresSQL Actor, for a connection to a PostgresSQL database
@@ -72,8 +106,20 @@ impl SqlActor {
     /// * `n` - Number of threads
     /// * `s` - PostgresSQL connection string
     pub fn pg(n: usize, s: &str) -> Result<Addr<Syn, SqlActor>, Error> {
-        let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::NotSupported));
-        Ok(addr)
+        #[cfg(feature = "postgres")] {
+            let manager = ConnectionManager::<PgConnection>::new(s);
+            let pool = Pool::builder()
+                .build(manager)?;
+
+            let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::NotSupported));
+            Ok(addr)
+        }
+
+        #[cfg(not(feature = "postgres"))] {
+            let _ = n;
+            let _ = s;
+            Err(SqlIdentityError::SqlVariantNotSupported.into())
+        }
     }
 }
 
@@ -95,6 +141,7 @@ impl Handler<FindIdentity> for SqlActor {
 
     fn handle(&mut self, msg: FindIdentity, _: &mut Self::Context) -> Self::Result {
         match self.0 {
+            #[cfg(feature = "sqlite")]
             SqlPool::SqlitePool(ref p) => {
                 use self::identities::dsl::*;
 
@@ -110,7 +157,16 @@ impl Handler<FindIdentity> for SqlActor {
                 }
 
             },
-            _ => Err(SqlIdentityError::SqlVariantNotSupported.into())
+
+            #[cfg(feature = "mysql")]
+            SqlPool::MySqlPool(ref _p) => {
+
+            },
+
+            #[cfg(feature = "postgres")]
+            SqlPool::PgPool(ref _p) => {
+
+            },
         }
     }
 }
@@ -133,6 +189,7 @@ impl Handler<UpdateIdentity> for SqlActor {
     fn handle(&mut self, msg: UpdateIdentity, _: &mut Self::Context) -> Self::Result {
 
         match self.0 {
+            #[cfg(feature = "sqlite")]
             SqlPool::SqlitePool(ref p) => {
                 use self::identities::dsl::*;
 
@@ -143,7 +200,16 @@ impl Handler<UpdateIdentity> for SqlActor {
                 
                 Ok(n)
             },
-            _ => Err(SqlIdentityError::SqlVariantNotSupported.into())
+
+            #[cfg(feature = "mysql")]
+            SqlPool::MySqlPool(ref _p) => {
+
+            },
+
+            #[cfg(feature = "postgres")]
+            SqlPool::PgPool(ref _p) => {
+
+            },
         }
     }
 }
@@ -164,6 +230,7 @@ impl Handler<DeleteIdentity> for SqlActor {
         use self::identities::dsl::*;
 
         match self.0 {
+            #[cfg(feature = "sqlite")]
             SqlPool::SqlitePool(ref p) => {
                 let conn: &SqliteConnection = &(*(p.get()?));
                 let n = diesel::delete(identities.filter(token.eq(msg.token)))
@@ -171,7 +238,16 @@ impl Handler<DeleteIdentity> for SqlActor {
 
                 Ok(n)
             },
-            _ => Err(SqlIdentityError::SqlVariantNotSupported.into())
+
+            #[cfg(feature = "mysql")]
+            SqlPool::MySqlPool(ref _p) => {
+
+            },
+
+            #[cfg(feature = "postgres")]
+            SqlPool::PgPool(ref _p) => {
+
+            },
         }
     }
 }
