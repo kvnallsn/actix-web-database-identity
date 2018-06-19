@@ -111,7 +111,7 @@ impl SqlActor {
             let pool = Pool::builder()
                 .build(manager)?;
 
-            let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::NotSupported));
+            let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::PgPool(pool.clone())));
             Ok(addr)
         }
 
@@ -140,33 +140,37 @@ impl Handler<FindIdentity> for SqlActor {
     type Result = Result<SqlIdentityModel, Error>;
 
     fn handle(&mut self, msg: FindIdentity, _: &mut Self::Context) -> Self::Result {
-        match self.0 {
+        use self::identities::dsl::*;
+
+        let mut results = match self.0 {
             #[cfg(feature = "sqlite")]
             SqlPool::SqlitePool(ref p) => {
-                use self::identities::dsl::*;
-
                 let conn: &SqliteConnection = &(*(p.get()?)); 
-                let mut results = identities.filter(token.eq(msg.token))
+                identities.filter(token.eq(msg.token))
                     .limit(1)
-                    .load::<SqlIdentityModel>(conn)?;
-
-                if results.len() == 1 {
-                    Ok(results.remove(0))
-                } else {
-                    Err(SqlIdentityError::SqlTokenNotFound.into())
-                }
-
+                    .load::<SqlIdentityModel>(conn)?
             },
 
             #[cfg(feature = "mysql")]
-            SqlPool::MySqlPool(ref _p) => {
-
+            SqlPool::MySqlPool(ref p) => {
+                let conn: &MysqlConnection = &(*(p.get()?)); 
+                identities.filter(token.eq(msg.token))
+                    .limit(1)
+                    .load::<SqlIdentityModel>(conn)?
             },
 
             #[cfg(feature = "postgres")]
-            SqlPool::PgPool(ref _p) => {
-
+            SqlPool::PgPool(ref p) => {
+                let conn: &PgConnection = &(*(p.get()?)); 
+                identities.filter(token.eq(msg.token))
+                    .limit(1)
+                    .load::<SqlIdentityModel>(conn)?
             },
+        };
+
+        match results.len() {
+            1 => Ok(results.remove(0)),
+            _ => Err(SqlIdentityError::SqlTokenNotFound.into()),
         }
     }
 }
@@ -187,12 +191,11 @@ impl Handler<UpdateIdentity> for SqlActor {
     type Result = Result<usize, Error>;
 
     fn handle(&mut self, msg: UpdateIdentity, _: &mut Self::Context) -> Self::Result {
+        use self::identities::dsl::*;
 
         match self.0 {
             #[cfg(feature = "sqlite")]
             SqlPool::SqlitePool(ref p) => {
-                use self::identities::dsl::*;
-
                 let conn: &SqliteConnection = &(*(p.get()?));
                 let n = diesel::replace_into(identities)
                     .values(&msg)
@@ -202,13 +205,26 @@ impl Handler<UpdateIdentity> for SqlActor {
             },
 
             #[cfg(feature = "mysql")]
-            SqlPool::MySqlPool(ref _p) => {
-
+            SqlPool::MySqlPool(ref p) => {
+                let conn: &MysqlConnection = &(*(p.get()?));
+                let n = diesel::replace_into(identities)
+                    .values(&msg)
+                    .execute(conn)?;
+                
+                Ok(n)
             },
 
             #[cfg(feature = "postgres")]
-            SqlPool::PgPool(ref _p) => {
+            SqlPool::PgPool(ref p) => {
+                let conn: &PgConnection = &(*(p.get()?));
+                let n = diesel::insert_into(identities)
+                    .values(&msg)
+                    .on_conflict(token)
+                    .do_update()
+                    .set(userid.eq(msg.userid.clone()))
+                    .execute(conn)?;
 
+                Ok(n)
             },
         }
     }
@@ -240,13 +256,19 @@ impl Handler<DeleteIdentity> for SqlActor {
             },
 
             #[cfg(feature = "mysql")]
-            SqlPool::MySqlPool(ref _p) => {
-
+            SqlPool::MySqlPool(ref p) => {
+                let conn: &MysqlConnection = &(*(p.get()?));
+                let n = diesel::delete(identities.filter(token.eq(msg.token)))
+                    .execute(conn)?;
+                Ok(n)
             },
 
             #[cfg(feature = "postgres")]
-            SqlPool::PgPool(ref _p) => {
-
+            SqlPool::PgPool(ref p) => {
+                let conn: &PgConnection = &(*(p.get()?));
+                let n = diesel::delete(identities.filter(token.eq(msg.token)))
+                    .execute(conn)?;
+                Ok(n)
             },
         }
     }

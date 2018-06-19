@@ -1,6 +1,7 @@
 //! A database (SQL) Identity Provider
 
 #![feature(custom_attribute)]
+#![feature(extern_prelude)]
 
 extern crate actix;
 extern crate actix_web;
@@ -190,11 +191,7 @@ impl SqlIdentityInner {
                     );
                 }
             }
-
-            // return Box::new(FutErr(awerror::ErrorBadRequest("Invalid Authorization Header")));
         }
-
-        // Box::new(FutErr(awerror::ErrorBadRequest("No Authorization Header")))
 
         Box::new(FutOk(None))
     }
