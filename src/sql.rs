@@ -200,7 +200,7 @@ impl Handler<UpdateIdentity> for SqlActor {
                 let n = diesel::replace_into(identities)
                     .values(&msg)
                     .execute(conn)?;
-                
+               
                 Ok(n)
             },
 

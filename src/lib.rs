@@ -15,6 +15,9 @@ extern crate rand;
 
 mod sql;
 
+#[cfg(test)]
+mod test;
+
 use std::rc::Rc;
 
 use failure::Error;
@@ -48,9 +51,15 @@ enum SqlIdentityError {
     SqlTokenNotFound,
 }
 
+enum SqlIdentityState {
+    Saved,
+    Deleted,
+    Unchanged,
+}
+
 /// Identity that uses a SQL database as identity storage
 pub struct SqlIdentity {
-    changed: bool,
+    state: SqlIdentityState,
     identity: Option<String>,
     token: Option<String>,
     inner: Rc<SqlIdentityInner>,
@@ -69,19 +78,20 @@ impl Identity for SqlIdentity {
     ///
     /// * `value` - User to remember
     fn remember(&mut self, value: String) {
-        self.changed = true;
         self.identity = Some(value);
 
         // Generate a random token
         let mut arr = [0u8; 24];
         rand::thread_rng().fill(&mut arr[..]);
         self.token = Some(base64::encode(&arr));
+
+        self.state = SqlIdentityState::Saved;
     }
 
     /// Forgets a user, by deleting the identity
     fn forget(&mut self) {
-        self.changed = true;
         self.identity = None;
+        self.state = SqlIdentityState::Deleted;
     }
 
     /// Saves the identity to the backing store, if it has changed
@@ -90,25 +100,37 @@ impl Identity for SqlIdentity {
     ///
     /// * `resp` - HTTP response to modify
     fn write(&mut self, resp: HttpResponse) -> Result<MiddlewareResponse, ActixWebError> {
-        let token = self.token.clone();
 
-        if let Some(ref token) = token {
-            if self.changed {
-                if let Some(ref identity) = self.identity {
-                    // Insert or update
-                    return Ok(MiddlewareResponse::Future(
-                            self.inner.save(token, identity, resp)
-                    ));
-                } else {
-                    // Delete token
-                    return Ok(MiddlewareResponse::Future(
-                            self.inner.remove(token, resp)
-                    ));
-                }
+        match self.state {
+            SqlIdentityState::Saved if self.token.is_some() && self.identity.is_some() => {
+                let token = self.token.as_ref().unwrap();
+                let identity = self.identity.as_ref().unwrap();
+                self.state = SqlIdentityState::Unchanged;
+                Ok(MiddlewareResponse::Future(
+                        self.inner.save(token, identity, resp)
+                ))
+            },
+
+            SqlIdentityState::Deleted if self.token.is_some() => {
+                let token = self.token.as_ref().unwrap();
+                self.state = SqlIdentityState::Unchanged;
+                Ok(MiddlewareResponse::Future(
+                        self.inner.remove(token, resp)
+                ))
+            },
+
+            SqlIdentityState::Deleted | SqlIdentityState::Saved => {
+                // Not logged in/log in failed
+                Ok(MiddlewareResponse::Done(
+                        HttpResponse::Unauthorized().finish()
+                ))
+            },
+
+            _ => { 
+                self.state = SqlIdentityState::Unchanged;
+                Ok(MiddlewareResponse::Done(resp))
             }
         }
-
-        Ok(MiddlewareResponse::Done(resp))
     }
 }
 
@@ -246,14 +268,14 @@ impl<S> IdentityPolicy<S> for SqlIdentityPolicy {
                 SqlIdentity {
                     identity: Some(id.userid),
                     token: Some(id.token),
-                    changed: false,
+                    state: SqlIdentityState::Unchanged,
                     inner: inner,
                 }
             } else {
                 SqlIdentity {
                     identity: None,
                     token: None,
-                    changed: false,
+                    state: SqlIdentityState::Unchanged,
                     inner: inner
                 }
             }
