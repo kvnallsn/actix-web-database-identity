@@ -228,6 +228,22 @@ impl SqlIdentityPolicy {
     /// # Arguments
     ///
     /// * `s` - Sqlite connection string (e.g., sqlite://test.db)
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # extern crate actix_web;
+    /// # extern crate actix_web_db_identity;
+    ///
+    /// use actix_web::App;
+    /// use actix_web::middleware::identity::IdentityService;
+    /// use actix_web_db_identity::SqlIdentityPolicy;
+    ///
+    /// let app = App::new().middleware(IdentityService::new(
+    ///     // <- create sqlite identity middleware
+    ///     SqlIdentityPolicy::sqlite("db.sqlite3").expect("failed to open database")
+    /// ));
+    /// ```
     pub fn sqlite(s: &str) -> Result<SqlIdentityPolicy, Error> {
         Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::sqlite(3, s)?))))
     }
@@ -237,6 +253,22 @@ impl SqlIdentityPolicy {
     /// # Arguments
     ///
     /// * `s` - MySQL connection string
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # extern crate actix_web;
+    /// # extern crate actix_web_db_identity;
+    ///
+    /// use actix_web::App;
+    /// use actix_web::middleware::identity::IdentityService;
+    /// use actix_web_db_identity::SqlIdentityPolicy;
+    ///
+    /// let app = App::new().middleware(IdentityService::new(
+    ///     // <- create mysql identity middleware
+    ///     SqlIdentityPolicy::mysql("server=127.0.0.1;uid=root;pwd=12345;database=test").expect("failed to open database")
+    /// ));
+    /// ```
     pub fn mysql(s: &str) -> Result<SqlIdentityPolicy, Error> {
         Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::mysql(3, s)?))))
     }
@@ -246,6 +278,22 @@ impl SqlIdentityPolicy {
     /// # Arguments
     ///
     /// * `s` - PostgresSQL connection string (e.g., psql://user@localhost:3339)
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # extern crate actix_web;
+    /// # extern crate actix_web_db_identity;
+    ///
+    /// use actix_web::App;
+    /// use actix_web::middleware::identity::IdentityService;
+    /// use actix_web_db_identity::SqlIdentityPolicy;
+    ///
+    /// let app = App::new().middleware(IdentityService::new(
+    ///     // <- create postgresql identity middleware
+    ///     SqlIdentityPolicy::postgres("postgresql://user:pass@localhost:5432/mydb").expect("failed to open database")
+    /// ));
+    /// ```
     pub fn postgres(s: &str) -> Result<SqlIdentityPolicy, Error> {
         Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::pg(3, s)?))))
     }
