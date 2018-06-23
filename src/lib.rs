@@ -1,8 +1,5 @@
 //! A database (SQL) Identity Provider
 
-#![feature(custom_attribute)]
-#![feature(extern_prelude)]
-
 extern crate actix;
 extern crate actix_web;
 extern crate base64;
