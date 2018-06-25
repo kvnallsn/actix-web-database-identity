@@ -8,12 +8,9 @@ Uses either SQLite, Postgresql, or MySQL as the backend for an identity provider
 
 ### Currently Implemented
 
-* SQLite (somewhat)
-
-### TODO List
-
-* Postgresql
+* SQLite 
 * MySQL
+* Postgres
 
 ## License
 
