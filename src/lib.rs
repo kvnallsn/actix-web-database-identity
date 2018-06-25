@@ -12,9 +12,6 @@ extern crate rand;
 
 mod sql;
 
-#[cfg(test)]
-mod test;
-
 use std::rc::Rc;
 
 use failure::Error;

@@ -1,18 +1,29 @@
 //! Tests Module
 
-use super::SqlIdentityPolicy;
+extern crate actix_web;
+extern crate actix_web_db_identity;
+extern crate dotenv;
+
+use actix_web_db_identity::SqlIdentityPolicy;
 
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use actix_web::http::StatusCode;
 use actix_web::test;
 use actix_web::middleware::identity::{IdentityService, RequestIdentity};
 
-const TEST_SQLITE_DATABASE: &'static str = "tests/db.sqlite3";
+use std::thread;
+use std::time::Duration;
 
 fn build_test_server() -> test::TestServer {
+    dotenv::from_filename("tests/test.env").ok();
+
+
     test::TestServer::new(move |app| {
         app.middleware(IdentityService::new(
-                SqlIdentityPolicy::sqlite(TEST_SQLITE_DATABASE).unwrap()))
+                SqlIdentityPolicy::sqlite(&dotenv::var("SQLITE_URL").unwrap()).unwrap())
+                //SqlIdentityPolicy::mysql(&dotenv::var("MYSQL_URL").unwrap()).unwrap())
+                //SqlIdentityPolicy::postgres(&dotenv::var("PG_URL").unwrap()).unwrap())
+        )
 
         .resource("/", |r| r.get().h(|_| {
             HttpResponse::Ok()
@@ -79,13 +90,17 @@ fn test_valid_token() {
         .uri(srv.url("/profile"))
         .header("Authorization", "Bearer g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC")
         .finish().unwrap();
+    println!("{:?}", request);
     let response = srv.execute(request.send()).unwrap();
+    println!("{:?}", response);
     assert!(response.status() == StatusCode::OK);
 }
 
 #[test]
 #[cfg(unix)]
 fn test_login_logout() {
+    thread::sleep(Duration::from_millis(50));
+
     let mut srv = build_test_server();
 
     // Make sure we can get the index (pass ok)
@@ -106,7 +121,7 @@ fn test_login_logout() {
     // Extract our login token
     let token = response.headers().get("twinscroll-auth");
     assert!(token.is_some());
-    let token = token.unwrap();
+    let token = token.unwrap().to_str().unwrap();
 
     // Try the protected route again (no auth token, fail unauthorized)
     let request = srv.get().uri(srv.url("/profile")).finish().unwrap();
@@ -115,9 +130,11 @@ fn test_login_logout() {
 
     // Try the protected route again (with token, pass ok)
     let request = srv.get().uri(srv.url("/profile"))
-        .header("Authorization", format!("Bearer {}", token.to_str().unwrap()))
+        .header("Authorization", format!("Bearer {}", token))
         .finish().unwrap();
+    println!("{:?}", request);
     let response = srv.execute(request.send()).unwrap();
+    println!("{:?}", response);
     assert!(response.status() == StatusCode::OK);
 
     // Log out (no token, expect fail unauthorized)
@@ -127,14 +144,14 @@ fn test_login_logout() {
 
     // Log out (with token, expect pass ok)
     let request = srv.post().uri(srv.url("/logout"))
-        .header("Authorization", format!("Bearer {}", token.to_str().unwrap()))
+        .header("Authorization", format!("Bearer {}", token))
         .finish().unwrap();
     let response = srv.execute(request.send()).unwrap();
     assert!(response.status() == StatusCode::OK);
 
     // Try the protected route again (after logout, fail unauthorized)
     let request = srv.get().uri(srv.url("/profile"))
-        .header("Authorization", format!("Bearer {}", token.to_str().unwrap()))
+        .header("Authorization", format!("Bearer {}", token))
         .finish().unwrap();
     let response = srv.execute(request.send()).unwrap();
     assert!(response.status() == StatusCode::UNAUTHORIZED);
