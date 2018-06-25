@@ -41,6 +41,7 @@ use rand::Rng;
 /// Error representing different failure cases
 #[derive(Debug, Fail)]
 enum SqlIdentityError {
+    #[allow(dead_code)]
     #[fail(display = "sql variant not supported")]
     SqlVariantNotSupported,
 
