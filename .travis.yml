@@ -8,6 +8,13 @@ matrix:
         - rust: nightly
     fast_finish: true
 
+addons:
+    postgresql: "10"
+    apt:
+        packages:
+            - postgresql-10
+            - postgresql-client-10
+
 cache: cargo
 
 env:
