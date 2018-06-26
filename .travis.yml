@@ -9,21 +9,17 @@ matrix:
     fast_finish: true
 
 addons:
-    postgresql: "10"
-    apt:
-        packages:
-            - postgresql-10
-            - postgresql-client-10
+    postgresql: "9.6"
 
 cache: cargo
 
 env:
     global:
-        - PGPORT=5433
-        - PGUSER=travis
-        - MYSQLUSER=root
+        - PGPORT=5432
+        - PGUSER=postgres
+        - MYSQLUSER=travis
         - SQLITE_URL=db.sqlite3
-        - MYSQL_URL=mysql://travis@localhost/twinscroll
+        - MYSQL_URL=mysql://${MYSQLUSER}@localhost/twinscroll
         - PG_URL=postgres://${PGUSER}@localhost:${PGPORT}/twinscroll
 
 services:
