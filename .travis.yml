@@ -26,7 +26,7 @@ before_script:
     - psql -c "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -U postgres -d twinscroll
     - mysql -e "CREATE DATABASE twinscroll;" -u root
     - mysql -e "CREATE TABLE identities (token CHAR(32) PRIMARY KEY, userid TEXT NOT NULL);" -u root -D twinscroll
-    - mysql -e "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -u root -d twinscroll
+    - mysql -e "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -u root -D twinscroll
     - sqlite3 ${SQLITE_URL} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL);"
     - sqlite3 ${SQLITE_URL} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" 
 
