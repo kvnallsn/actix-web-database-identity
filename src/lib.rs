@@ -117,7 +117,7 @@ impl Identity for SqlIdentity {
             SqlIdentityState::Deleted | SqlIdentityState::Saved => {
                 // Not logged in/log in failed
                 Ok(MiddlewareResponse::Done(
-                        HttpResponse::Unauthorized().finish()
+                        HttpResponse::BadRequest().finish()
                 ))
             },
 

@@ -56,7 +56,9 @@ fn build_test_server(sql: Sql) -> test::TestServer {
 }
 
 fn check_response(srv: &mut test::TestServer, req: ClientRequest, exp: StatusCode) -> bool {
+    println!("{:?}", req);
     let resp = srv.execute(req.send()).unwrap();
+    println!("{:?}", resp);
 
     resp.status() == exp
 }
@@ -186,8 +188,11 @@ fn login_logout(mut srv: test::TestServer) {
     assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED), "Unauthorized GET of /profile (1)");
 
     // Login in (assumes valid credentials)
+    println!("######### LOGIN #########");
     let request = srv.post().uri(srv.url("/login")).finish().unwrap();
+    println!("{:?}", request);
     let response = srv.execute(request.send()).unwrap();
+    println!("{:?}", response);
     assert!(response.status() == StatusCode::OK, "Login Failed");
 
     // Extract our login token
@@ -206,8 +211,9 @@ fn login_logout(mut srv: test::TestServer) {
     assert!(check_response(&mut srv, request, StatusCode::OK), "Failed to GET /profile!");
 
     // Log out (no token, expect fail unauthorized)
+    println!("######### LOGOUT #########");
     let request = srv.post().uri(srv.url("/logout")).finish().unwrap();
-    assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED), "Unauthorized POST to /logout");
+    assert!(check_response(&mut srv, request, StatusCode::BAD_REQUEST), "Unauthorized POST to /logout");
 
     // Log out (with token, expect pass ok)
     let request = srv.post().uri(srv.url("/logout"))
