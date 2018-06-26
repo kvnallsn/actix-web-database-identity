@@ -19,10 +19,10 @@ cache: cargo
 
 env:
     global:
+        - PGPORT=5433
         - SQLITE_URL=db.sqlite3
         - MYSQL_URL=mysql://travis@localhost/twinscroll
-        - PG_URL=postgres://postgres@localhost/twinscroll
-        - PGPORT=5432
+        - PG_URL=postgres://postgres@localhost:${PGPORT}/twinscroll
 
 services:
     - mysql
