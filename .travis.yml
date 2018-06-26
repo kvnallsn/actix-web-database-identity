@@ -22,6 +22,7 @@ env:
         - SQLITE_URL=db.sqlite3
         - MYSQL_URL=mysql://travis@localhost/twinscroll
         - PG_URL=postgres://postgres@localhost/twinscroll
+        - PGPORT=5432
 
 services:
     - mysql
