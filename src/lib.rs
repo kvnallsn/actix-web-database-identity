@@ -290,6 +290,7 @@ impl SqlIdentityPolicy {
     /// ));
     /// ```
     pub fn postgres(s: &str) -> Result<SqlIdentityPolicy, Error> {
+        debug!("Connecting to {}", s);
         Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::pg(3, s)?))))
     }
 }
