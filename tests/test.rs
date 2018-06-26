@@ -25,9 +25,9 @@ fn build_test_server(sql: Sql) -> test::TestServer {
     test::TestServer::new(move |app| {
         app.middleware(IdentityService::new(
                 match sql {
-                    Sql::Sqlite => SqlIdentityPolicy::sqlite(&dotenv::var("SQLITE_URL").unwrap()).unwrap(),
-                    Sql::MySql => SqlIdentityPolicy::mysql(&dotenv::var("MYSQL_URL").unwrap()).unwrap(),
-                    Sql::Pg => SqlIdentityPolicy::postgres(&dotenv::var("PG_URL").unwrap()).unwrap(),
+                    Sql::Sqlite => SqlIdentityPolicy::sqlite(1, &dotenv::var("SQLITE_URL").unwrap()).unwrap(),
+                    Sql::MySql => SqlIdentityPolicy::mysql(1, &dotenv::var("MYSQL_URL").unwrap()).unwrap(),
+                    Sql::Pg => SqlIdentityPolicy::postgres(1, &dotenv::var("PG_URL").unwrap()).unwrap(),
                 }
             )
         )

@@ -223,6 +223,7 @@ impl SqlIdentityPolicy {
     ///
     /// # Arguments
     ///
+    /// * `n` - Connection pool size
     /// * `s` - Sqlite connection string (e.g., sqlite://test.db)
     ///
     /// # Example
@@ -237,17 +238,18 @@ impl SqlIdentityPolicy {
     ///
     /// let app = App::new().middleware(IdentityService::new(
     ///     // <- create sqlite identity middleware
-    ///     SqlIdentityPolicy::sqlite("db.sqlite3").expect("failed to open database")
+    ///     SqlIdentityPolicy::sqlite(3, "db.sqlite3").expect("failed to open database")
     /// ));
     /// ```
-    pub fn sqlite(s: &str) -> Result<SqlIdentityPolicy, Error> {
-        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::sqlite(3, s)?))))
+    pub fn sqlite(n: usize, s: &str) -> Result<SqlIdentityPolicy, Error> {
+        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::sqlite(n, s)?))))
     }
 
     /// Creates a new MySQL identity policy
     ///
     /// # Arguments
     ///
+    /// * `n` - Connection pool size
     /// * `s` - MySQL connection string
     ///
     /// # Example
@@ -262,17 +264,18 @@ impl SqlIdentityPolicy {
     ///
     /// let app = App::new().middleware(IdentityService::new(
     ///     // <- create mysql identity middleware
-    ///     SqlIdentityPolicy::mysql("server=127.0.0.1;uid=root;pwd=12345;database=test").expect("failed to open database")
+    ///     SqlIdentityPolicy::mysql(3, "mysql://user:pass@localhost/twinscroll").expect("failed to open database")
     /// ));
     /// ```
-    pub fn mysql(s: &str) -> Result<SqlIdentityPolicy, Error> {
-        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::mysql(3, s)?))))
+    pub fn mysql(n: usize, s: &str) -> Result<SqlIdentityPolicy, Error> {
+        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::mysql(n, s)?))))
     }
 
     /// Creates a new PostgreSQL identity policy
     ///
     /// # Arguments
     ///
+    /// * `n` - Connection pool size
     /// * `s` - PostgresSQL connection string (e.g., psql://user@localhost:3339)
     ///
     /// # Example
@@ -287,12 +290,12 @@ impl SqlIdentityPolicy {
     ///
     /// let app = App::new().middleware(IdentityService::new(
     ///     // <- create postgresql identity middleware
-    ///     SqlIdentityPolicy::postgres("postgresql://user:pass@localhost:5432/mydb").expect("failed to open database")
+    ///     SqlIdentityPolicy::postgres(3, "postgresql://user:pass@localhost:5432/mydb").expect("failed to open database")
     /// ));
     /// ```
-    pub fn postgres(s: &str) -> Result<SqlIdentityPolicy, Error> {
+    pub fn postgres(n: usize, s: &str) -> Result<SqlIdentityPolicy, Error> {
         debug!("Connecting to {}", s);
-        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::pg(3, s)?))))
+        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::pg(n, s)?))))
     }
 }
 
