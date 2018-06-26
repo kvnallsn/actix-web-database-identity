@@ -10,6 +10,7 @@ base64 = "0.9"
 failure = "*"
 failure_derive = "*"
 futures = "0.1"
+log = "0.4"
 rand = "0.5"
 
 [dependencies.diesel]

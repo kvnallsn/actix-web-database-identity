@@ -9,6 +9,7 @@ extern crate rand;
 
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate failure_derive;
+#[macro_use] extern crate log;
 
 mod sql;
 
