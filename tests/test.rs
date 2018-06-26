@@ -12,9 +12,6 @@ use actix_web::http::StatusCode;
 use actix_web::test;
 use actix_web::middleware::identity::{IdentityService, RequestIdentity};
 
-use std::thread;
-use std::time::Duration;
-
 enum Sql {
     Sqlite,
     MySql,
@@ -70,7 +67,7 @@ fn check_response(srv: &mut test::TestServer, req: ClientRequest, exp: StatusCod
 /// Expected Result: 200 OK
 fn get_index(mut srv: test::TestServer) {
     let request = srv.get().finish().unwrap();
-    assert!(check_response(&mut srv, request, StatusCode::OK));
+    assert!(check_response(&mut srv, request, StatusCode::OK), "Failed to get unprotected index");
 }
 
 #[test]
@@ -97,7 +94,7 @@ fn pg_get_index() {
 /// Expected Result: 401 Unauthorized
 fn no_identity(mut srv: test::TestServer) {
     let request = srv.get().uri(srv.url("/profile")).finish().unwrap();
-    assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED));
+    assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED), "Unauthorized login");
 }
 
 #[test]
@@ -127,7 +124,7 @@ fn invalid_token(mut srv: test::TestServer) {
         .uri(srv.url("/profile"))
         .header("Authorization", "Bearer invalidtoken")
         .finish().unwrap();
-    assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED));
+    assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED), "Unauthorized login");
 }
 
 #[test]
@@ -157,7 +154,7 @@ fn valid_token(mut srv: test::TestServer) {
         .uri(srv.url("/profile"))
         .header("Authorization", "Bearer g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC")
         .finish().unwrap();
-    assert!(check_response(&mut srv, request, StatusCode::OK));
+    assert!(check_response(&mut srv, request, StatusCode::OK), "Token Not Found");
 }
 
 #[test]
@@ -182,52 +179,51 @@ fn pg_valid_token() {
 fn login_logout(mut srv: test::TestServer) {
     // Make sure we can get the index (pass ok)
     let request = srv.get().finish().unwrap();
-    assert!(check_response(&mut srv, request, StatusCode::OK));
+    assert!(check_response(&mut srv, request, StatusCode::OK), "Failed to GET /index!");
 
     // Try the protected route (no token, fail unauthorized)
     let request = srv.get().uri(srv.url("/profile")).finish().unwrap();
-    assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED));
+    assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED), "Unauthorized GET of /profile (1)");
 
     // Login in (assumes valid credentials)
     let request = srv.post().uri(srv.url("/login")).finish().unwrap();
     let response = srv.execute(request.send()).unwrap();
-    assert!(response.status() == StatusCode::OK);
+    assert!(response.status() == StatusCode::OK, "Login Failed");
 
     // Extract our login token
     let token = response.headers().get("twinscroll-auth");
-    assert!(token.is_some());
+    assert!(token.is_some(), "Token Not Found");
     let token = token.unwrap().to_str().unwrap();
 
     // Try the protected route again (no auth token, fail unauthorized)
     let request = srv.get().uri(srv.url("/profile")).finish().unwrap();
-    assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED));
+    assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED), "Unauthorized GET of /profile (2)");
 
     // Try the protected route again (with token, pass ok)
     let request = srv.get().uri(srv.url("/profile"))
         .header("Authorization", format!("Bearer {}", token))
         .finish().unwrap();
-    assert!(check_response(&mut srv, request, StatusCode::OK));
+    assert!(check_response(&mut srv, request, StatusCode::OK), "Failed to GET /profile!");
 
     // Log out (no token, expect fail unauthorized)
     let request = srv.post().uri(srv.url("/logout")).finish().unwrap();
-    assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED));
+    assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED), "Unauthorized POST to /logout");
 
     // Log out (with token, expect pass ok)
     let request = srv.post().uri(srv.url("/logout"))
         .header("Authorization", format!("Bearer {}", token))
         .finish().unwrap();
-    assert!(check_response(&mut srv, request, StatusCode::OK));
+    assert!(check_response(&mut srv, request, StatusCode::OK), "Failed to logout");
 
     // Try the protected route again (after logout, fail unauthorized)
     let request = srv.get().uri(srv.url("/profile"))
         .header("Authorization", format!("Bearer {}", token))
         .finish().unwrap();
-    assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED));
+    assert!(check_response(&mut srv, request, StatusCode::UNAUTHORIZED), "Unauthorized GET of /profile (3)");
 }
 
 #[test]
 fn sqlite_login_logout() {
-    thread::sleep(Duration::from_millis(100));
     let srv = build_test_server(Sql::Sqlite);
     login_logout(srv);    
 }
