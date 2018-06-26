@@ -1,0 +1,30 @@
+language: rust
+rust:
+    - stable
+    - beta
+    - nightly
+matrix:
+    allow_failures:
+        - rust: nightly
+    fast_finish: true
+
+cache: cargo
+
+env:
+    - SQLITE_URL=tests/db.sqlite3
+    - MYSQL_URL='mysql://travis@localhost/twinscroll'
+    - PG_URL='postgres://postgres@localhost/twinscroll'
+
+services:
+    - mysql
+    - postgresql
+
+before_script:
+    - psql -c 'CREATE DATABASE twinscroll;' -U postgres
+    - psql -c 'CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL);' -U postgres
+    - mysql -e 'CREATE DATABASE twinscroll;' -U root
+    - mysql -e 'CREATE TABLE identities (token CHAR(32) PRIMARY KEY, userid TEXT NOT NULL);' -U root
+
+script:
+    - cargo build --verbose
+    - cargo test --verbose
