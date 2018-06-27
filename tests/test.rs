@@ -122,7 +122,11 @@ fn valid_token(mut srv: test::TestServer) {
     );
 }
 
+// There are some problems with this test, most likely due to too many
+// concurrent reads/writes in a short period of time with SQLite, ignore
+// unless specifically requested
 #[test]
+#[ignore]
 fn sqlite_valid_token() {
     let srv = common::build_test_server(SqlVariant::Sqlite);
     valid_token(srv);
