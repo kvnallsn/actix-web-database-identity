@@ -7,9 +7,12 @@ extern crate failure;
 extern crate futures;
 extern crate rand;
 
-#[macro_use] extern crate diesel;
-#[macro_use] extern crate failure_derive;
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate failure_derive;
+#[macro_use]
+extern crate log;
 
 mod sql;
 
@@ -17,21 +20,21 @@ use std::rc::Rc;
 
 use failure::Error;
 
-use actix::Addr;
 use actix::prelude::Syn;
+use actix::Addr;
 
 // Actix Web imports
-use actix_web::{HttpMessage, HttpRequest, HttpResponse};
-use actix_web::error::{Error as ActixWebError};
-use actix_web::middleware::{Response as MiddlewareResponse};
+use actix_web::error::Error as ActixWebError;
 use actix_web::middleware::identity::{Identity, IdentityPolicy};
+use actix_web::middleware::Response as MiddlewareResponse;
+use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 
 // Futures imports
+use futures::future::ok as FutOk;
 use futures::Future;
-use futures::future::{ok as FutOk};
 
 // (Local) Sql Imports
-use sql::{DeleteIdentity, FindIdentity, UpdateIdentity, SqlActor, SqlIdentityModel};
+use sql::{DeleteIdentity, FindIdentity, SqlActor, SqlIdentityModel, UpdateIdentity};
 
 // Rand Imports (thread secure!)
 use rand::Rng;
@@ -62,7 +65,6 @@ pub struct SqlIdentity {
 }
 
 impl Identity for SqlIdentity {
-    
     /// Returns the current identity, or none
     fn identity(&self) -> Option<&str> {
         self.identity.as_ref().map(|s| s.as_ref())
@@ -91,38 +93,35 @@ impl Identity for SqlIdentity {
     }
 
     /// Saves the identity to the backing store, if it has changed
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `resp` - HTTP response to modify
     fn write(&mut self, resp: HttpResponse) -> Result<MiddlewareResponse, ActixWebError> {
-
         match self.state {
             SqlIdentityState::Saved if self.token.is_some() && self.identity.is_some() => {
                 let token = self.token.as_ref().unwrap();
                 let identity = self.identity.as_ref().unwrap();
                 self.state = SqlIdentityState::Unchanged;
                 Ok(MiddlewareResponse::Future(
-                        self.inner.save(token, identity, resp)
+                    self.inner.save(token, identity, resp),
                 ))
-            },
+            }
 
             SqlIdentityState::Deleted if self.token.is_some() => {
                 let token = self.token.as_ref().unwrap();
                 self.state = SqlIdentityState::Unchanged;
-                Ok(MiddlewareResponse::Future(
-                        self.inner.remove(token, resp)
-                ))
-            },
+                Ok(MiddlewareResponse::Future(self.inner.remove(token, resp)))
+            }
 
             SqlIdentityState::Deleted | SqlIdentityState::Saved => {
                 // Not logged in/log in failed
                 Ok(MiddlewareResponse::Done(
-                        HttpResponse::BadRequest().finish()
+                    HttpResponse::BadRequest().finish(),
                 ))
-            },
+            }
 
-            _ => { 
+            _ => {
                 self.state = SqlIdentityState::Unchanged;
                 Ok(MiddlewareResponse::Done(resp))
             }
@@ -142,14 +141,16 @@ impl SqlIdentityInner {
     ///
     /// * `addr` - A SQL connection, already opened
     fn new(addr: Addr<Syn, SqlActor>) -> SqlIdentityInner {
-        SqlIdentityInner {
-            addr,
-        }
+        SqlIdentityInner { addr }
     }
 
     /// Saves an identity to the backend provider (SQL database)
-    fn save(&self, token: &str, userid: &str, mut resp: HttpResponse) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
-
+    fn save(
+        &self,
+        token: &str,
+        userid: &str,
+        mut resp: HttpResponse,
+    ) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
         {
             // Add the new token/identity to response headers
             let headers = resp.headers_mut();
@@ -158,7 +159,10 @@ impl SqlIdentityInner {
 
         Box::new(
             self.addr
-                .send(UpdateIdentity { token: token.to_string(), userid: userid.to_string() })
+                .send(UpdateIdentity {
+                    token: token.to_string(),
+                    userid: userid.to_string(),
+                })
                 .map_err(ActixWebError::from)
                 .and_then(move |res| match res {
                     Ok(_) => Ok(resp),
@@ -168,11 +172,16 @@ impl SqlIdentityInner {
     }
 
     /// Removes an identity from the backend provider (SQL database)
-    fn remove(&self, token: &str, resp: HttpResponse) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
-
+    fn remove(
+        &self,
+        token: &str,
+        resp: HttpResponse,
+    ) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
         Box::new(
             self.addr
-                .send(DeleteIdentity { token: token.to_string() })
+                .send(DeleteIdentity {
+                    token: token.to_string(),
+                })
                 .map_err(ActixWebError::from)
                 .and_then(move |res| match res {
                     Ok(_) => Ok(resp),
@@ -182,13 +191,16 @@ impl SqlIdentityInner {
     }
 
     /// Loads an identity from the backend provider (SQL database)
-    fn load<S>(&self, req: &HttpRequest<S>) -> Box<Future<Item = Option<SqlIdentityModel>, Error = ActixWebError>> {
+    fn load<S>(
+        &self,
+        req: &HttpRequest<S>,
+    ) -> Box<Future<Item = Option<SqlIdentityModel>, Error = ActixWebError>> {
         let headers = req.headers();
         let auth_header = headers.get("Authorization");
 
         if let Some(auth_header) = auth_header {
             // Return the identity (or none, if it doesn't exist)
-           
+
             if let Ok(auth_header) = auth_header.to_str() {
                 let mut iter = auth_header.split(' ');
                 let scheme = iter.next();
@@ -200,7 +212,9 @@ impl SqlIdentityInner {
 
                     return Box::new(
                         self.addr
-                            .send(FindIdentity { token: token.to_string() })
+                            .send(FindIdentity {
+                                token: token.to_string(),
+                            })
                             .map_err(ActixWebError::from)
                             .and_then(move |res| match res {
                                 Ok(val) => Ok(Some(val)),
@@ -242,7 +256,9 @@ impl SqlIdentityPolicy {
     /// ));
     /// ```
     pub fn sqlite(n: usize, s: &str) -> Result<SqlIdentityPolicy, Error> {
-        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::sqlite(n, s)?))))
+        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(
+            SqlActor::sqlite(n, s)?,
+        ))))
     }
 
     /// Creates a new MySQL identity policy
@@ -268,7 +284,9 @@ impl SqlIdentityPolicy {
     /// ));
     /// ```
     pub fn mysql(n: usize, s: &str) -> Result<SqlIdentityPolicy, Error> {
-        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::mysql(n, s)?))))
+        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(
+            SqlActor::mysql(n, s)?,
+        ))))
     }
 
     /// Creates a new PostgreSQL identity policy
@@ -295,7 +313,9 @@ impl SqlIdentityPolicy {
     /// ```
     pub fn postgres(n: usize, s: &str) -> Result<SqlIdentityPolicy, Error> {
         debug!("Connecting to {}", s);
-        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(SqlActor::pg(n, s)?))))
+        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(
+            SqlActor::pg(n, s)?,
+        ))))
     }
 }
 
@@ -324,10 +344,9 @@ impl<S> IdentityPolicy<S> for SqlIdentityPolicy {
                     identity: None,
                     token: None,
                     state: SqlIdentityState::Unchanged,
-                    inner: inner
+                    inner: inner,
                 }
             }
         }))
     }
 }
-

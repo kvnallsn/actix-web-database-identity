@@ -6,12 +6,11 @@ extern crate dotenv;
 
 mod common;
 
-use actix_web::HttpMessage;
 use actix_web::http::StatusCode;
 use actix_web::test;
+use actix_web::HttpMessage;
 
 use common::SqlVariant;
-
 
 /// Retrieves index page with no token supplied
 ///
@@ -19,7 +18,10 @@ use common::SqlVariant;
 /// Expected Result: 200 OK
 fn get_index(mut srv: test::TestServer) {
     let request = srv.get().finish().unwrap();
-    assert!(common::check_response(&mut srv, request, StatusCode::OK), "Failed to get unprotected index");
+    assert!(
+        common::check_response(&mut srv, request, StatusCode::OK),
+        "Failed to get unprotected index"
+    );
 }
 
 #[test]
@@ -46,7 +48,10 @@ fn pg_get_index() {
 /// Expected Result: 401 Unauthorized
 fn no_identity(mut srv: test::TestServer) {
     let request = srv.get().uri(srv.url("/profile")).finish().unwrap();
-    assert!(common::check_response(&mut srv, request, StatusCode::UNAUTHORIZED), "Unauthorized login");
+    assert!(
+        common::check_response(&mut srv, request, StatusCode::UNAUTHORIZED),
+        "Unauthorized login"
+    );
 }
 
 #[test]
@@ -75,8 +80,12 @@ fn invalid_token(mut srv: test::TestServer) {
     let request = srv.get()
         .uri(srv.url("/profile"))
         .header("Authorization", "Bearer invalidtoken")
-        .finish().unwrap();
-    assert!(common::check_response(&mut srv, request, StatusCode::UNAUTHORIZED), "Unauthorized login");
+        .finish()
+        .unwrap();
+    assert!(
+        common::check_response(&mut srv, request, StatusCode::UNAUTHORIZED),
+        "Unauthorized login"
+    );
 }
 
 #[test]
@@ -105,8 +114,12 @@ fn valid_token(mut srv: test::TestServer) {
     let request = srv.get()
         .uri(srv.url("/profile"))
         .header("Authorization", "Bearer g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC")
-        .finish().unwrap();
-    assert!(common::check_response(&mut srv, request, StatusCode::OK), "Token Not Found");
+        .finish()
+        .unwrap();
+    assert!(
+        common::check_response(&mut srv, request, StatusCode::OK),
+        "Token Not Found"
+    );
 }
 
 #[test]
@@ -132,12 +145,18 @@ fn login_logout(mut srv: test::TestServer) {
     // Make sure we can get the index (pass ok)
     println!("######### INDEX #########");
     let request = srv.get().finish().unwrap();
-    assert!(common::check_response(&mut srv, request, StatusCode::OK), "Failed to GET /index!");
+    assert!(
+        common::check_response(&mut srv, request, StatusCode::OK),
+        "Failed to GET /index!"
+    );
 
     // Try the protected route (no token, fail unauthorized)
     println!("######### PROFILE #1 #########");
     let request = srv.get().uri(srv.url("/profile")).finish().unwrap();
-    assert!(common::check_response(&mut srv, request, StatusCode::UNAUTHORIZED), "Unauthorized GET of /profile (1)");
+    assert!(
+        common::check_response(&mut srv, request, StatusCode::UNAUTHORIZED),
+        "Unauthorized GET of /profile (1)"
+    );
 
     // Login in (assumes valid credentials)
     println!("######### LOGIN #########");
@@ -155,49 +174,70 @@ fn login_logout(mut srv: test::TestServer) {
     // Try the protected route again (no auth token, fail unauthorized)
     println!("######### PROFILE #2 #########");
     let request = srv.get().uri(srv.url("/profile")).finish().unwrap();
-    assert!(common::check_response(&mut srv, request, StatusCode::UNAUTHORIZED), "Unauthorized GET of /profile (2)");
+    assert!(
+        common::check_response(&mut srv, request, StatusCode::UNAUTHORIZED),
+        "Unauthorized GET of /profile (2)"
+    );
 
     // Try the protected route again (with token, pass ok)
     println!("######### PROFILE #3 #########");
-    let request = srv.get().uri(srv.url("/profile"))
+    let request = srv.get()
+        .uri(srv.url("/profile"))
         .header("Authorization", format!("Bearer {}", token))
-        .finish().unwrap();
-    assert!(common::check_response(&mut srv, request, StatusCode::OK), "Failed to GET /profile!");
+        .finish()
+        .unwrap();
+    assert!(
+        common::check_response(&mut srv, request, StatusCode::OK),
+        "Failed to GET /profile!"
+    );
 
     // Log out (no token, expect fail unauthorized)
     println!("######### LOGOUT #1 #########");
     let request = srv.post().uri(srv.url("/logout")).finish().unwrap();
-    assert!(common::check_response(&mut srv, request, StatusCode::BAD_REQUEST), "Unauthorized POST to /logout");
+    assert!(
+        common::check_response(&mut srv, request, StatusCode::BAD_REQUEST),
+        "Unauthorized POST to /logout"
+    );
 
     // Log out (with token, expect pass ok)
     println!("######### LOGOUT #2 #########");
-    let request = srv.post().uri(srv.url("/logout"))
+    let request = srv.post()
+        .uri(srv.url("/logout"))
         .header("Authorization", format!("Bearer {}", token))
-        .finish().unwrap();
-    assert!(common::check_response(&mut srv, request, StatusCode::OK), "Failed to logout");
+        .finish()
+        .unwrap();
+    assert!(
+        common::check_response(&mut srv, request, StatusCode::OK),
+        "Failed to logout"
+    );
 
     // Try the protected route again (after logout, fail unauthorized)
     println!("######### PROFILE #4 #########");
-    let request = srv.get().uri(srv.url("/profile"))
+    let request = srv.get()
+        .uri(srv.url("/profile"))
         .header("Authorization", format!("Bearer {}", token))
-        .finish().unwrap();
-    assert!(common::check_response(&mut srv, request, StatusCode::UNAUTHORIZED), "Unauthorized GET of /profile (3)");
+        .finish()
+        .unwrap();
+    assert!(
+        common::check_response(&mut srv, request, StatusCode::UNAUTHORIZED),
+        "Unauthorized GET of /profile (3)"
+    );
 }
 
 #[test]
 fn sqlite_login_logout() {
     let srv = common::build_test_server(SqlVariant::Sqlite);
-    login_logout(srv);    
+    login_logout(srv);
 }
 
 #[test]
 fn mysql_login_logout() {
     let srv = common::build_test_server(SqlVariant::MySql);
-    login_logout(srv);    
+    login_logout(srv);
 }
 
 #[test]
 fn pg_login_logout() {
     let srv = common::build_test_server(SqlVariant::Postgres);
-    login_logout(srv);    
+    login_logout(srv);
 }
