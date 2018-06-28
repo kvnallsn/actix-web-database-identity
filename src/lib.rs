@@ -100,8 +100,8 @@ impl Identity for SqlIdentity {
     fn write(&mut self, resp: HttpResponse) -> Result<MiddlewareResponse, ActixWebError> {
         match self.state {
             SqlIdentityState::Saved if self.token.is_some() && self.identity.is_some() => {
-                let token = self.token.as_ref().unwrap();
-                let identity = self.identity.as_ref().unwrap();
+                let token = self.token.as_ref().expect("[SIS::Saved] Token is None!");
+                let identity = self.identity.as_ref().expect("[SIS::Saved] Identity is None!");
                 self.state = SqlIdentityState::Unchanged;
                 Ok(MiddlewareResponse::Future(
                     self.inner.save(token, identity, resp),
@@ -109,7 +109,7 @@ impl Identity for SqlIdentity {
             }
 
             SqlIdentityState::Deleted if self.token.is_some() => {
-                let token = self.token.as_ref().unwrap();
+                let token = self.token.as_ref().expect("[SIS::Deleted] Token is None!");
                 self.state = SqlIdentityState::Unchanged;
                 Ok(MiddlewareResponse::Future(self.inner.remove(token, resp)))
             }
@@ -154,7 +154,7 @@ impl SqlIdentityInner {
         {
             // Add the new token/identity to response headers
             let headers = resp.headers_mut();
-            headers.append("Twinscroll-Auth", token.parse().unwrap());
+            headers.append("Twinscroll-Auth", token.parse().expect("[SII::save] token failed to parse"));
         }
 
         Box::new(
@@ -166,7 +166,10 @@ impl SqlIdentityInner {
                 .map_err(ActixWebError::from)
                 .and_then(move |res| match res {
                     Ok(_) => Ok(resp),
-                    Err(_) => Ok(HttpResponse::InternalServerError().finish()),
+                    Err(e) => {
+                        println!("[SII::save] ERROR: {:?}", e);
+                        Ok(HttpResponse::InternalServerError().finish())
+                    }
                 }),
         )
     }
@@ -207,8 +210,8 @@ impl SqlIdentityInner {
                 let token = iter.next();
 
                 if scheme.is_some() && token.is_some() {
-                    let _scheme = scheme.unwrap();
-                    let token = token.unwrap();
+                    let _scheme = scheme.expect("[SII::load] Scheme is None!");
+                    let token = token.expect("[SII::load] Token is None!");
 
                     return Box::new(
                         self.addr

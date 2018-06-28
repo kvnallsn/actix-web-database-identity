@@ -18,6 +18,8 @@ use diesel::mysql::MysqlConnection;
 #[cfg(feature = "postgres")]
 use diesel::pg::PgConnection;
 
+//use std::time::Duration;
+
 // Failure (error management system) Imports
 use failure::Error;
 
@@ -63,7 +65,8 @@ impl SqlActor {
         #[cfg(feature = "sqlite")]
         {
             let manager = ConnectionManager::<SqliteConnection>::new(s);
-            let pool = Pool::builder().build(manager)?;
+            let pool = Pool::builder()
+                .build(manager)?;
 
             let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::SqlitePool(pool.clone())));
             Ok(addr)
@@ -87,7 +90,8 @@ impl SqlActor {
         #[cfg(feature = "mysql")]
         {
             let manager = ConnectionManager::<MysqlConnection>::new(s);
-            let pool = Pool::builder().build(manager)?;
+            let pool = Pool::builder()
+                .build(manager)?;
 
             let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::MySqlPool(pool.clone())));
             Ok(addr)
@@ -111,7 +115,8 @@ impl SqlActor {
         #[cfg(feature = "postgres")]
         {
             let manager = ConnectionManager::<PgConnection>::new(s);
-            let pool = Pool::builder().build(manager)?;
+            let pool = Pool::builder()
+                .build(manager)?;
 
             let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::PgPool(pool.clone())));
             Ok(addr)
