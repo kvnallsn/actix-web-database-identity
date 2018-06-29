@@ -37,12 +37,12 @@ before_script:
     - mysql -e "CREATE DATABASE twinscroll;" -u ${MYSQL_USER}
     - mysql -e "CREATE TABLE identities (token CHAR(32) PRIMARY KEY, userid TEXT NOT NULL);" -u ${MYSQL_USER} -D ${MYSQL_DB}
     - mysql -e "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -u ${MYSQL_USER} -D ${MYSQL_DB}
-    - sqlite3 ${SQLITE_URL} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL);"
-    - sqlite3 ${SQLITE_URL} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" 
-    - sqlite3 ${SQLITE_URL2} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL);"
-    - sqlite3 ${SQLITE_URL2} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" 
-    - sqlite3 ${SQLITE_URL3} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL);"
-    - sqlite3 ${SQLITE_URL3} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" 
+    - sqlite3 ${SQLITE_URL} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL)"
+    - sqlite3 ${SQLITE_URL} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin')" 
+    - sqlite3 ${SQLITE_URL2} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL)"
+    - sqlite3 ${SQLITE_URL2} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin')" 
+    - sqlite3 ${SQLITE_URL3} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL)"
+    - sqlite3 ${SQLITE_URL3} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin')" 
 
 script:
     - cargo build --verbose
