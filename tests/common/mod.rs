@@ -19,25 +19,69 @@ pub enum SqlVariant {
     Postgres,
 }
 
-/// Builds a new test server using a specific SQL variant. Returns
-/// a new TestServer
+/// Builds a new test server using a specific SQL variant and
+/// reads the connection string from an environment variable.
+/// Returns a new TestServer instance
 ///
 /// # Arguments
 ///
 /// * `sql` - The SQL variant to use (Sqlite, MySQL, or PostgreSQL)
-pub fn build_test_server(sql: SqlVariant) -> TestServer {
+pub fn build_test_server_from_env(variant: SqlVariant) -> TestServer {
     dotenv::from_filename("tests/test.env").ok();
+
+    let uri = match variant {
+        SqlVariant::Sqlite => {
+            format!("{}/{}",
+                    dotenv::var("SQLITE_PATH").unwrap(),
+                    dotenv::var("SQLITE_DB").unwrap(),
+            )
+        },
+        SqlVariant::MySql => {
+            format!("mysql://{}:{}@{}/{}",
+                    dotenv::var("MYSQL_USER").unwrap(),
+                    dotenv::var("MYSQL_PASS").unwrap(),
+                    dotenv::var("MYSQL_HOST").unwrap(),
+                    dotenv::var("MYSQL_DB").unwrap()
+            )
+        },
+        SqlVariant::Postgres => {
+            format!("postgres://{}:{}@{}/{}",
+                    dotenv::var("PG_USER").unwrap(),
+                    dotenv::var("PG_PASS").unwrap(),
+                    dotenv::var("PG_HOST").unwrap(),
+                    dotenv::var("PG_DB").unwrap()
+            )
+        }
+    };
+
+    build_test_server(variant, uri)
+}
+
+/// Builds a new test server using a specific SQL variant and
+/// reads the connection string from an environment variable.
+/// Returns a new TestServer instance
+///
+/// # Arguments
+///
+/// * `sql` - The SQL variant to use (Sqlite, MySQL, or PostgreSQL)
+/// * `uri` - Database connection string (e.g., sqlite://, mysql://, postgres://)
+pub fn build_test_server<S: Into<String>>(sql: SqlVariant, uri: S) -> TestServer {
+    let uri = uri.into();
+    println!("Connecting to: {}", uri);
 
     TestServer::new(move |app| {
         app.middleware(IdentityService::new(match sql {
             SqlVariant::Sqlite => {
-                SqlIdentityPolicy::sqlite(1, &dotenv::var("SQLITE_URL").unwrap()).unwrap()
+                SqlIdentityPolicy::sqlite(1, &uri)
+                    .expect("failed to connect to sqlite")
             }
             SqlVariant::MySql => {
-                SqlIdentityPolicy::mysql(1, &dotenv::var("MYSQL_URL").unwrap()).unwrap()
+                SqlIdentityPolicy::mysql(1, &uri)
+                    .expect("failed to connect to mysql")
             }
             SqlVariant::Postgres => {
-                SqlIdentityPolicy::postgres(1, &dotenv::var("PG_URL").unwrap()).unwrap()
+                SqlIdentityPolicy::postgres(1, &uri)
+                    .expect("failed to connect to postgres")
             }
         })).resource("/", |r| r.get().h(|_| HttpResponse::Ok()))
             .resource("/login", |r| {
@@ -61,6 +105,12 @@ pub fn build_test_server(sql: SqlVariant) -> TestServer {
     })
 }
 
+/// Adds an authorization bearer token to a request
+///
+/// # Arguments
+///
+/// * `req` - Request to modify
+/// * `token` - Token to add to request authorization header
 pub fn add_token_to_request(req: &mut ClientRequestBuilder, token: &str) {
     req.header("Authorization", format!("Bearer {}", token));
 }

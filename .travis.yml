@@ -15,26 +15,34 @@ cache: cargo
 
 env:
     global:
-        - PGPORT=5432
-        - PGUSER=postgres
-        - MYSQLUSER=travis
-        - SQLITE_URL=db.sqlite3
-        - MYSQL_URL=mysql://${MYSQLUSER}@localhost/twinscroll
-        - PG_URL=postgres://${PGUSER}@localhost:${PGPORT}/twinscroll
+        - SQLITE_PATH='.'
+        - SQLITE_DB=db.sqlite3
+        - SQLITE_DB2=db2.sqlite3
+        - SQLITE_DB3=db3.sqlite3
+        - MYSQL_USER=travis
+        - MYSQL_HOST=localhost
+        - MYSQL_DB=twinscroll
+        - PG_USER=postgres
+        - PG_HOST=localhost
+        - PG_DB=twinscroll
 
 services:
     - mysql
     - postgresql
 
 before_script:
-    - psql -c "CREATE DATABASE twinscroll;" -U ${PGUSER}
-    - psql -c "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL);" -U ${PGUSER} -d twinscroll
-    - psql -c "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -U ${PGUSER} -d twinscroll
-    - mysql -e "CREATE DATABASE twinscroll;" -u ${MYSQLUSER}
-    - mysql -e "CREATE TABLE identities (token CHAR(32) PRIMARY KEY, userid TEXT NOT NULL);" -u ${MYSQLUSER} -D twinscroll
-    - mysql -e "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -u ${MYSQLUSER} -D twinscroll
+    - psql -c "CREATE DATABASE twinscroll;" -U ${PG_USER}
+    - psql -c "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL);" -U ${PG_USER} -d ${PG_DB}
+    - psql -c "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -U ${PGUSER} -d ${PG_DB}
+    - mysql -e "CREATE DATABASE twinscroll;" -u ${MYSQL_USER}
+    - mysql -e "CREATE TABLE identities (token CHAR(32) PRIMARY KEY, userid TEXT NOT NULL);" -u ${MYSQL_USER} -D ${MYSQL_DB}
+    - mysql -e "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -u ${MYSQL_USER} -D ${MYSQL_DB}
     - sqlite3 ${SQLITE_URL} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL);"
     - sqlite3 ${SQLITE_URL} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" 
+    - sqlite3 ${SQLITE_URL2} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL);"
+    - sqlite3 ${SQLITE_URL2} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" 
+    - sqlite3 ${SQLITE_URL3} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL);"
+    - sqlite3 ${SQLITE_URL3} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" 
 
 script:
     - cargo build --verbose

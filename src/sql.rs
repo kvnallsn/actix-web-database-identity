@@ -18,8 +18,6 @@ use diesel::mysql::MysqlConnection;
 #[cfg(feature = "postgres")]
 use diesel::pg::PgConnection;
 
-//use std::time::Duration;
-
 // Failure (error management system) Imports
 use failure::Error;
 

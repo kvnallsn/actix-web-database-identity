@@ -21,19 +21,19 @@ fn get_index(mut srv: TestServer) {
 
 #[test]
 fn sqlite_get_index() {
-    let srv = common::build_test_server(SqlVariant::Sqlite);
+    let srv = common::build_test_server_from_env(SqlVariant::Sqlite);
     get_index(srv);
 }
 
 #[test]
 fn mysql_get_index() {
-    let srv = common::build_test_server(SqlVariant::MySql);
+    let srv = common::build_test_server_from_env(SqlVariant::MySql);
     get_index(srv);
 }
 
 #[test]
 fn pg_get_index() {
-    let srv = common::build_test_server(SqlVariant::Postgres);
+    let srv = common::build_test_server_from_env(SqlVariant::Postgres);
     get_index(srv);
 }
 
@@ -47,19 +47,19 @@ fn no_identity(mut srv: TestServer) {
 
 #[test]
 fn sqlite_no_identity() {
-    let srv = common::build_test_server(SqlVariant::Sqlite);
+    let srv = common::build_test_server_from_env(SqlVariant::Sqlite);
     no_identity(srv);
 }
 
 #[test]
 fn mysql_no_identity() {
-    let srv = common::build_test_server(SqlVariant::MySql);
+    let srv = common::build_test_server_from_env(SqlVariant::MySql);
     no_identity(srv);
 }
 
 #[test]
 fn pg_no_identity() {
-    let srv = common::build_test_server(SqlVariant::Postgres);
+    let srv = common::build_test_server_from_env(SqlVariant::Postgres);
     no_identity(srv);
 }
 
@@ -73,19 +73,19 @@ fn invalid_token(mut srv: TestServer) {
 
 #[test]
 fn sqlite_invalid_token() {
-    let srv = common::build_test_server(SqlVariant::Sqlite);
+    let srv = common::build_test_server_from_env(SqlVariant::Sqlite);
     invalid_token(srv);
 }
 
 #[test]
 fn mysql_invalid_token() {
-    let srv = common::build_test_server(SqlVariant::MySql);
+    let srv = common::build_test_server_from_env(SqlVariant::MySql);
     invalid_token(srv);
 }
 
 #[test]
 fn pg_invalid_token() {
-    let srv = common::build_test_server(SqlVariant::Postgres);
+    let srv = common::build_test_server_from_env(SqlVariant::Postgres);
     invalid_token(srv);
 }
 
@@ -101,21 +101,20 @@ fn valid_token(mut srv: TestServer) {
 // concurrent reads/writes in a short period of time with SQLite, ignore
 // unless specifically requested
 #[test]
-#[ignore]
 fn sqlite_valid_token() {
-    let srv = common::build_test_server(SqlVariant::Sqlite);
+    let srv = common::build_test_server_from_env(SqlVariant::Sqlite);
     valid_token(srv);
 }
 
 #[test]
 fn mysql_valid_token() {
-    let srv = common::build_test_server(SqlVariant::MySql);
+    let srv = common::build_test_server_from_env(SqlVariant::MySql);
     valid_token(srv);
 }
 
 #[test]
 fn pg_valid_token() {
-    let srv = common::build_test_server(SqlVariant::Postgres);
+    let srv = common::build_test_server_from_env(SqlVariant::Postgres);
     valid_token(srv);
 }
 
@@ -159,19 +158,24 @@ fn login_logout(mut srv: TestServer) {
 
 #[test]
 fn sqlite_login_logout() {
-    let srv = common::build_test_server(SqlVariant::Sqlite);
+    dotenv::from_filename("tests/test.env").ok();
+    let uri = format!("{}/{}",
+            dotenv::var("SQLITE_PATH").unwrap(),
+            dotenv::var("SQLITE_DB2").unwrap(),
+    );
+    let srv = common::build_test_server(SqlVariant::Sqlite, uri);
     login_logout(srv);
 }
 
 #[test]
 fn mysql_login_logout() {
-    let srv = common::build_test_server(SqlVariant::MySql);
+    let srv = common::build_test_server_from_env(SqlVariant::MySql);
     login_logout(srv);
 }
 
 #[test]
 fn pg_login_logout() {
-    let srv = common::build_test_server(SqlVariant::Postgres);
+    let srv = common::build_test_server_from_env(SqlVariant::Postgres);
     login_logout(srv);
 }
 
@@ -212,20 +216,24 @@ fn multiple_logout(mut srv: TestServer) {
 }
 
 #[test]
-#[ignore]
 fn sqlite_multiple_logout() {
-    let srv = common::build_test_server(SqlVariant::Sqlite);
+    dotenv::from_filename("tests/test.env").ok();
+    let uri = format!("{}/{}",
+            dotenv::var("SQLITE_PATH").unwrap(),
+            dotenv::var("SQLITE_DB3").unwrap(),
+    );
+    let srv = common::build_test_server(SqlVariant::Sqlite, uri);
     multiple_logout(srv);
 }
 
 #[test]
 fn mysql_multiple_logout() {
-    let srv = common::build_test_server(SqlVariant::MySql);
+    let srv = common::build_test_server_from_env(SqlVariant::MySql);
     multiple_logout(srv);
 }
 
 #[test]
 fn pg_multiple_logout() {
-    let srv = common::build_test_server(SqlVariant::Postgres);
+    let srv = common::build_test_server_from_env(SqlVariant::Postgres);
     multiple_logout(srv);
 }
