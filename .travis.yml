@@ -34,7 +34,7 @@ before_script:
     - psql -f sql/postgres.sql -U ${PG_USER}
     - psql -f tests/load.sql -d ${PG_DB} -U ${PG_USER}
     - mysql -u ${MYSQL_USER} < sql/mysql.sql
-    - mysql -u ${MYSQL_USER} -d ${MYSQL_DB} < tests/load.sql
+    - mysql -u ${MYSQL_USER} -D ${MYSQL_DB} < tests/load.sql
     - sqlite3 ${SQLITE_DB} < sql/sqlite.sql
     - sqlite3 ${SQLITE_DB} < tests/load.sql
     - sqlite3 ${SQLITE_DB2} < sql/sqlite.sql
