@@ -33,7 +33,7 @@ services:
 before_script:
     - psql -c "CREATE DATABASE twinscroll;" -U ${PG_USER}
     - psql -c "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL);" -U ${PG_USER} -d ${PG_DB}
-    - psql -c "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -U ${PGUSER} -d ${PG_DB}
+    - psql -c "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -U ${PG_USER} -d ${PG_DB}
     - mysql -e "CREATE DATABASE twinscroll;" -u ${MYSQL_USER}
     - mysql -e "CREATE TABLE identities (token CHAR(32) PRIMARY KEY, userid TEXT NOT NULL);" -u ${MYSQL_USER} -D ${MYSQL_DB}
     - mysql -e "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -u ${MYSQL_USER} -D ${MYSQL_DB}
