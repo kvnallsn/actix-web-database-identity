@@ -32,24 +32,22 @@ reset: reset_sqlite reset_pg reset_mysql
 
 .PHONY: create_sqlite
 sqlite:
-	sqlite3 ${SQLITE_DB} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL)"
-	sqlite3 ${SQLITE_DB} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin')" 
-	sqlite3 ${SQLITE_DB2} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL)"
-	sqlite3 ${SQLITE_DB2} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin')" 
-	sqlite3 ${SQLITE_DB3} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL)"
-	sqlite3 ${SQLITE_DB3} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin')"
+	sqlite3 ${SQLITE_DB} < ../sql/sqlite.sql
+	sqlite3 ${SQLITE_DB2} < ../sql/sqlite.sql
+	sqlite3 ${SQLITE_DB3} < ../sql/sqlite.sql
+	sqlite3 ${SQLITE_DB} < load.sql
+	sqlite3 ${SQLITE_DB2} < load.sql
+	sqlite3 ${SQLITE_DB3} < load.sql
 
 .PHONY: create_pg
 pg:
-	psql -c "CREATE DATABASE twinscroll;" -U ${PG_USER}
-	psql -c "CREATE TABLE IF NOT EXISTS identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL);" -U ${PG_USER} -d ${PG_DB}
-	psql -c "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -U ${PG_USER} -d ${PG_DB}
+	psql -f ../sql/postgres.sql -U ${PG_USER}
+	psql -f load.sql -U ${PG_USER} -d ${PG_DB}
 
 .PHONY: create_mysql
 mysql:
-	mysql -e "CREATE DATABASE IF NOT EXISTS twinscroll;" -u ${MYSQL_USER} -p"${MYSQL_PASS}"
-	mysql -e "CREATE TABLE IF NOT EXISTS identities (token CHAR(32) PRIMARY KEY, userid TEXT NOT NULL);" -u ${MYSQL_USER} -D ${MYSQL_DB} -p"${MYSQL_PASS}"
-	mysql -e "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -u ${MYSQL_USER} -D ${MYSQL_DB} -p"${MYSQL_PASS}"
+	mysql -u ${MYSQL_USER} -p"${MYSQL_PASS}" < ../sql/mysql.sql
+	mysql -u ${MYSQL_USER} -p"${MYSQL_PASS}" -D ${MYSQL_DB} < load.sql
 
 .PHONY: clean_sqlite
 clean_sqlite:

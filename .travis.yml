@@ -31,18 +31,16 @@ services:
     - postgresql
 
 before_script:
-    - psql -c "CREATE DATABASE twinscroll;" -U ${PG_USER}
-    - psql -c "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL);" -U ${PG_USER} -d ${PG_DB}
-    - psql -c "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -U ${PG_USER} -d ${PG_DB}
-    - mysql -e "CREATE DATABASE twinscroll;" -u ${MYSQL_USER}
-    - mysql -e "CREATE TABLE identities (token CHAR(32) PRIMARY KEY, userid TEXT NOT NULL);" -u ${MYSQL_USER} -D ${MYSQL_DB}
-    - mysql -e "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin');" -u ${MYSQL_USER} -D ${MYSQL_DB}
-    - sqlite3 ${SQLITE_URL} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL)"
-    - sqlite3 ${SQLITE_URL} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin')" 
-    - sqlite3 ${SQLITE_URL2} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL)"
-    - sqlite3 ${SQLITE_URL2} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin')" 
-    - sqlite3 ${SQLITE_URL3} "CREATE TABLE identities (token TEXT PRIMARY KEY, userid TEXT NOT NULL)"
-    - sqlite3 ${SQLITE_URL3} "INSERT INTO identities (token, userid) VALUES ('g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC', 'admin')" 
+    - psql -f sql/postgres.sql -U ${PG_USER}
+    - psql -f tests/load.sql -d ${PG_DB} -U ${PG_USER}
+    - mysql -u ${MYSQL_USER} < sql/mysql.sql
+    - mysql -u ${MYSQL_USER} -d ${MYSQL_DB} < tests/load.sql
+    - sqlite3 ${SQLITE_DB} < sql/sqlite.sql
+    - sqlite3 ${SQLITE_DB} < tests/load.sql
+    - sqlite3 ${SQLITE_DB2} < sql/sqlite.sql
+    - sqlite3 ${SQLITE_DB2} < tests/load.sql
+    - sqlite3 ${SQLITE_DB3} < sql/sqlite.sql
+    - sqlite3 ${SQLITE_DB3} < tests/load.sql
 
 script:
     - cargo build --verbose
