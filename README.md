@@ -22,7 +22,7 @@ extern crate actix_web_sql_identity;
 
 use actix_web::{http, server, App, HttpRequest, Responder};
 use actix_web::middleware::identity::{IdentityService, RequestIdentity};
-use actix_web_sql_identity::SqlIdentityPolicy;
+use actix_web_sql_identity::SqlIdentityBuilder;
 
 const POOL_SIZE: usize = 3;     // Number of connections per pool
 
@@ -46,16 +46,20 @@ fn logout(mut req: HttpRequest) -> impl Responder {
 }
 
 fn main() {
-    server::new(
-        || App::new()
+    server::new(|| {
+        let policy = SqlIdentityBuilder::new("my.db")
+            .pool_size(POOL_SIZE);
+
+        App::new()
             .route("/login", http::Method::POST, login)
             .route("/profile", http::Method::GET, profile)
             .route("/logout", http::Method::POST, logout)
             .middleware(IdentityService::new(
-                    SqlIdentityPolicy::sqlite(POOL_SIZE, "my.db")
-                        .expect("failed to connect to database"))))
-        .bind("127.0.0.1:7070").unwrap()
-        .run();
+                    policy.sqlite()
+                        .expect("failed to connect to database")))
+    })
+    .bind("127.0.0.1:7070").unwrap()
+    .run();
 }
 ```
 

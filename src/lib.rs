@@ -11,7 +11,7 @@
 //!
 //! use actix_web::{http, server, App, HttpRequest, Responder};
 //! use actix_web::middleware::identity::{IdentityService, RequestIdentity};
-//! use actix_web_sql_identity::SqlIdentityPolicy;
+//! use actix_web_sql_identity::SqlIdentityBuilder;
 //!
 //! const POOL_SIZE: usize = 3;     // Number of connections per pool
 //!
@@ -35,16 +35,20 @@
 //! }
 //!
 //! fn main() {
-//!    server::new(
-//!        || App::new()
+//!     server::new(|| {
+//!         let policy = SqlIdentityBuilder::new("my.db")
+//!             .pool_size(POOL_SIZE);
+//!
+//!         App::new()
 //!            .route("/login", http::Method::POST, login)
 //!            .route("/profile", http::Method::GET, profile)
 //!            .route("/logout", http::Method::POST, logout)
 //!            .middleware(IdentityService::new(
-//!                     SqlIdentityPolicy::sqlite(POOL_SIZE, "my.db")
-//!                         .expect("failed to connect to database"))))
-//!         .bind("127.0.0.1:7070").unwrap()
-//!         .run();
+//!                     policy.sqlite()
+//!                         .expect("failed to connect to database")))
+//!     })
+//!     .bind("127.0.0.1:7070").unwrap()
+//!     .run();
 //! }
 //! ```
 
@@ -59,8 +63,6 @@ extern crate rand;
 extern crate diesel;
 #[macro_use]
 extern crate failure_derive;
-#[macro_use]
-extern crate log;
 
 mod sql;
 
@@ -86,6 +88,9 @@ use sql::{DeleteIdentity, FindIdentity, SqlActor, SqlIdentityModel, UpdateIdenti
 
 // Rand Imports (thread secure!)
 use rand::Rng;
+
+const DEFAULT_RESPONSE_HDR: &'static str= "actix-auth";
+const DEFAULT_POOL_SIZE: usize = 3;
 
 /// Error representing different failure cases
 #[derive(Debug, Fail)]
@@ -180,6 +185,7 @@ impl Identity for SqlIdentity {
 /// Wrapped inner-provider for SQL storage
 struct SqlIdentityInner {
     addr: Addr<Syn, SqlActor>,
+    hdr: &'static str,
 }
 
 impl SqlIdentityInner {
@@ -188,8 +194,8 @@ impl SqlIdentityInner {
     /// # Arguments
     ///
     /// * `addr` - A SQL connection, already opened
-    fn new(addr: Addr<Syn, SqlActor>) -> SqlIdentityInner {
-        SqlIdentityInner { addr }
+    fn new(addr: Addr<Syn, SqlActor>, hdr: &'static str) -> SqlIdentityInner {
+        SqlIdentityInner { addr, hdr }
     }
 
     /// Saves an identity to the backend provider (SQL database)
@@ -202,7 +208,7 @@ impl SqlIdentityInner {
         {
             // Add the new token/identity to response headers
             let headers = resp.headers_mut();
-            headers.append("Twinscroll-Auth", token.parse().expect("[SII::save] token failed to parse"));
+            headers.append(self.hdr, token.parse().expect("[SII::save] token failed to parse"));
         }
 
         Box::new(
@@ -283,13 +289,18 @@ impl SqlIdentityInner {
 /// Use a SQL database for request identity storage
 pub struct SqlIdentityPolicy(Rc<SqlIdentityInner>);
 
-impl SqlIdentityPolicy {
-    /// Creates a new SQLite identity policy
+pub struct SqlIdentityBuilder {
+    pool: usize,
+    uri: String,
+    hdr: &'static str,
+}
+
+impl SqlIdentityBuilder {
+    /// Creates a new SqlIdentityBuilder that constructs a SqlIdentityPolicy
     ///
     /// # Arguments
     ///
-    /// * `n` - Connection pool size
-    /// * `s` - Sqlite connection string (e.g., sqlite://test.db)
+    /// * `uri` - Database connection string
     ///
     /// # Example
     ///
@@ -299,73 +310,70 @@ impl SqlIdentityPolicy {
     ///
     /// use actix_web::App;
     /// use actix_web::middleware::identity::IdentityService;
-    /// use actix_web_sql_identity::SqlIdentityPolicy;
+    /// use actix_web_sql_identity::SqlIdentityBuilder;
+    /// 
+    /// // Create the identity policy
+    /// let policy = SqlIdentityBuilder::new("database.sqlite3")
+    ///                 .pool_size(5)
+    ///                 .sqlite()
+    ///                 .expect("failed to open database");
     ///
     /// let app = App::new().middleware(IdentityService::new(
-    ///     // <- create sqlite identity middleware
-    ///     SqlIdentityPolicy::sqlite(3, "db.sqlite3").expect("failed to open database")
+    ///     policy
     /// ));
     /// ```
-    pub fn sqlite(n: usize, s: &str) -> Result<SqlIdentityPolicy, Error> {
+    pub fn new<T: Into<String>>(uri: T) -> SqlIdentityBuilder {
+        SqlIdentityBuilder {
+            pool: DEFAULT_POOL_SIZE,
+            uri: uri.into(),
+            hdr: DEFAULT_RESPONSE_HDR,
+        }
+    }
+
+    /// Change the response header when an identity is remembered
+    /// 
+    /// # Arguments 
+    ///
+    /// * `hdr` - Response header name to use
+    pub fn response_header(mut self, hdr: &'static str) -> SqlIdentityBuilder {
+        self.hdr = hdr;
+        self
+    }
+
+    /// Change how many SQL connections are in each pool
+    ///
+    /// # Arguments
+    ///
+    /// * `count` - Number of connections per pool
+    pub fn pool_size(mut self, count: usize) -> SqlIdentityBuilder {
+        self.pool = count;
+        self
+    }
+
+    /// Creates a SQLite identity policy, returning the policy if successful,
+    /// or an error if unsuccessful
+    pub fn sqlite(self) -> Result<SqlIdentityPolicy, Error> {
         Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(
-            SqlActor::sqlite(n, s)?,
+                        SqlActor::sqlite(self.pool, &self.uri)?,
+                        self.hdr,
         ))))
     }
 
-    /// Creates a new MySQL identity policy
-    ///
-    /// # Arguments
-    ///
-    /// * `n` - Connection pool size
-    /// * `s` - MySQL connection string
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # extern crate actix_web;
-    /// # extern crate actix_web_sql_identity;
-    ///
-    /// use actix_web::App;
-    /// use actix_web::middleware::identity::IdentityService;
-    /// use actix_web_sql_identity::SqlIdentityPolicy;
-    ///
-    /// let app = App::new().middleware(IdentityService::new(
-    ///     // <- create mysql identity middleware
-    ///     SqlIdentityPolicy::mysql(3, "mysql://user:pass@localhost/twinscroll").expect("failed to open database")
-    /// ));
-    /// ```
-    pub fn mysql(n: usize, s: &str) -> Result<SqlIdentityPolicy, Error> {
+    /// Creates a MySQL identity policy, returning the policy if successful,
+    /// or an error if unsuccessful
+    pub fn mysql(self) -> Result<SqlIdentityPolicy, Error> {
         Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(
-            SqlActor::mysql(n, s)?,
+                        SqlActor::mysql(self.pool, &self.uri)?,
+                        self.hdr,
         ))))
     }
 
-    /// Creates a new PostgreSQL identity policy
-    ///
-    /// # Arguments
-    ///
-    /// * `n` - Connection pool size
-    /// * `s` - PostgresSQL connection string (e.g., psql://user@localhost:3339)
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # extern crate actix_web;
-    /// # extern crate actix_web_sql_identity;
-    ///
-    /// use actix_web::App;
-    /// use actix_web::middleware::identity::IdentityService;
-    /// use actix_web_sql_identity::SqlIdentityPolicy;
-    ///
-    /// let app = App::new().middleware(IdentityService::new(
-    ///     // <- create postgresql identity middleware
-    ///     SqlIdentityPolicy::postgres(3, "postgresql://user:pass@localhost:5432/mydb").expect("failed to open database")
-    /// ));
-    /// ```
-    pub fn postgres(n: usize, s: &str) -> Result<SqlIdentityPolicy, Error> {
-        debug!("Connecting to {}", s);
+    /// Creates a PostgreSQL identity policy, returning the policy if successful,
+    /// or an error if unsuccessful
+    pub fn postgresql(self) -> Result<SqlIdentityPolicy, Error> {
         Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(
-            SqlActor::pg(n, s)?,
+                        SqlActor::pg(self.pool, &self.uri)?,
+                        self.hdr,
         ))))
     }
 }

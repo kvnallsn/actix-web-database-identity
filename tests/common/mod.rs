@@ -2,7 +2,7 @@
 //!
 //! Module: Tests/common
 
-use actix_web_sql_identity::SqlIdentityPolicy;
+use actix_web_sql_identity::SqlIdentityBuilder;
 
 use actix_web::client::{ClientRequest, ClientRequestBuilder};
 use actix_web::http::StatusCode;
@@ -11,6 +11,8 @@ use actix_web::test::TestServer;
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 
 use dotenv;
+
+const RESPONSE_HEADER: &'static str = "test-auth";
 
 /// The different kinds of SQL languanges supported
 pub enum SqlVariant {
@@ -69,18 +71,23 @@ pub fn build_test_server<S: Into<String>>(sql: SqlVariant, uri: S) -> TestServer
     let uri = uri.into();
     println!("Connecting to: {}", uri);
 
+
     TestServer::new(move |app| {
+        // Build SQL Identity policy
+        let policy = SqlIdentityBuilder::new(uri.clone())
+            .response_header(RESPONSE_HEADER);
+
         app.middleware(IdentityService::new(match sql {
             SqlVariant::Sqlite => {
-                SqlIdentityPolicy::sqlite(1, &uri)
+                policy.sqlite()
                     .expect("failed to connect to sqlite")
             }
             SqlVariant::MySql => {
-                SqlIdentityPolicy::mysql(1, &uri)
+                policy.mysql()
                     .expect("failed to connect to mysql")
             }
             SqlVariant::Postgres => {
-                SqlIdentityPolicy::postgres(1, &uri)
+                policy.postgresql()
                     .expect("failed to connect to postgres")
             }
         })).resource("/", |r| r.get().h(|_| HttpResponse::Ok()))
@@ -150,7 +157,7 @@ pub fn login(srv: &mut TestServer, _username: &str) -> Option<String> {
     println!("{:?}", response);
     assert!(response.status() == StatusCode::OK, "Login Failed");
 
-    match response.headers().get("twinscroll-auth") {
+    match response.headers().get(RESPONSE_HEADER) {
         Some(token) => Some(token.to_str().unwrap().to_string()),
         None => None,
     }
