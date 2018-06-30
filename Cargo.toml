@@ -1,6 +1,6 @@
 [package]
 name = "actix-web-sql-identity"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Kevin Allison <kvnallsn@gmail.com>"]
 description = "A SQL-backend identity provider for Actix Web's identity system"
 repository = "https://github.com/kvnallsn/actix-web-database-identity"
