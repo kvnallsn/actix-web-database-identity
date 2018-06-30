@@ -2,6 +2,16 @@
 name = "actix-web-sql-identity"
 version = "0.1.1"
 authors = ["Kevin Allison <kvnallsn@gmail.com>"]
+description = "A SQL-backend identity provider for Actix Web's identity system"
+repository = "https://github.com/kvnallsn/actix-web-database-identity"
+readme = "README.md"
+keywords = ["identity", "actix", "database", "sql", "postgres"]
+categories = ["web-programming", "database", "authentication"]
+license = "BSD 3-Clause"
+exclude = ["tests/*.sqlite3", "doc/**/*.html"]
+
+[badges]
+travis-ci = { repository = "kvnallsn/actix-web-database-identity", branch = "master" }
 
 [dependencies]
 actix = "0.5"
