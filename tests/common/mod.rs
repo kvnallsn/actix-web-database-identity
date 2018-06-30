@@ -2,7 +2,7 @@
 //!
 //! Module: Tests/common
 
-use actix_web_db_identity::SqlIdentityPolicy;
+use actix_web_sql_identity::SqlIdentityPolicy;
 
 use actix_web::client::{ClientRequest, ClientRequestBuilder};
 use actix_web::http::StatusCode;

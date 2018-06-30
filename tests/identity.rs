@@ -1,7 +1,7 @@
 //! Tests Module
 
 extern crate actix_web;
-extern crate actix_web_db_identity;
+extern crate actix_web_sql_identity;
 extern crate dotenv;
 
 mod common;

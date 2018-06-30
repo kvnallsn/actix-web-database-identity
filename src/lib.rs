@@ -247,11 +247,11 @@ impl SqlIdentityPolicy {
     ///
     /// ```no_run
     /// # extern crate actix_web;
-    /// # extern crate actix_web_db_identity;
+    /// # extern crate actix_web_sql_identity;
     ///
     /// use actix_web::App;
     /// use actix_web::middleware::identity::IdentityService;
-    /// use actix_web_db_identity::SqlIdentityPolicy;
+    /// use actix_web_sql_identity::SqlIdentityPolicy;
     ///
     /// let app = App::new().middleware(IdentityService::new(
     ///     // <- create sqlite identity middleware
@@ -275,11 +275,11 @@ impl SqlIdentityPolicy {
     ///
     /// ```no_run
     /// # extern crate actix_web;
-    /// # extern crate actix_web_db_identity;
+    /// # extern crate actix_web_sql_identity;
     ///
     /// use actix_web::App;
     /// use actix_web::middleware::identity::IdentityService;
-    /// use actix_web_db_identity::SqlIdentityPolicy;
+    /// use actix_web_sql_identity::SqlIdentityPolicy;
     ///
     /// let app = App::new().middleware(IdentityService::new(
     ///     // <- create mysql identity middleware
@@ -303,11 +303,11 @@ impl SqlIdentityPolicy {
     ///
     /// ```no_run
     /// # extern crate actix_web;
-    /// # extern crate actix_web_db_identity;
+    /// # extern crate actix_web_sql_identity;
     ///
     /// use actix_web::App;
     /// use actix_web::middleware::identity::IdentityService;
-    /// use actix_web_db_identity::SqlIdentityPolicy;
+    /// use actix_web_sql_identity::SqlIdentityPolicy;
     ///
     /// let app = App::new().middleware(IdentityService::new(
     ///     // <- create postgresql identity middleware
