@@ -7,7 +7,7 @@ repository = "https://github.com/kvnallsn/actix-web-database-identity"
 readme = "README.md"
 keywords = ["identity", "actix", "database", "sql", "postgres"]
 categories = ["web-programming", "database", "authentication"]
-license = "BSD 3-Clause"
+license = "BSD-3-Clause"
 exclude = ["tests/*.sqlite3", "doc/**/*.html"]
 
 [badges]
