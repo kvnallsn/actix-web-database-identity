@@ -89,7 +89,7 @@ use sql::{DeleteIdentity, FindIdentity, SqlActor, SqlIdentityModel, UpdateIdenti
 // Rand Imports (thread secure!)
 use rand::Rng;
 
-const DEFAULT_RESPONSE_HDR: &'static str= "actix-auth";
+const DEFAULT_RESPONSE_HDR: &'static str= "X-Actix-Auth";
 const DEFAULT_POOL_SIZE: usize = 3;
 
 /// Error representing different failure cases

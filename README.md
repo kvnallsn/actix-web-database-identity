@@ -39,6 +39,17 @@ _mysql_: Include MySQL support
 
 _postgres_: Include PostgreSQL supprt
 
+## Database Requirements
+
+This crate requires a table named *identities* with the following fields:
+
+| Field  | Type     | Constraints                   | Description                                                 |
+| ------ | -------- | ----------------------------- | ----------------------------------------------------------- |
+| token  | CHAR(32) | PRIMARY KEY, NOT NULL, UNIQUE | The auto-generated token field, will be used to lookup user |
+| userid | TEXT     | NOT NULL                      | The user id to remember, probably a key in another table    |
+
+Example SQL files for SQLite, MySQL, and PostgreSQL are available int the sql/ folder on the repository
+
 ## Server Example
 
 ```rust
@@ -101,7 +112,7 @@ use hyper::header::{Authorization, Bearer, Headers};
 use reqwest::{Client, Response};
 
 // Build our custom header that will contain our returned token
-header! { (XActixAuth, "actix-auth") => [String] }
+header! { (XActixAuth, "X-Actix-Auth") => [String] }
 
 /// Builds a GET request to send to the server, with optional authentication
 ///
