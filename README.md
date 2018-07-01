@@ -4,17 +4,42 @@
 
 SQL database (diesel) integration for actix framework
 
-## SQL Backend
+## Description
 
-Uses either SQLite, Postgresql, or MySQL as the backend for an identity provider
+Implements a SQL backend for Actix-Web's identity middleware.  Does not perform any authentication, only "remembers" the user when told to.  The returned header containing the authorized token is configurable via the `SqlIdentityBuilder::response_header()` method.
 
-### Currently Implemented
+Normal server application flow:
+
+* Application authenticates a user
+* Application calls `remember()` with a user-identifiable string
+* SQL identity middleware generates a new token and embeds it in the response header
+* Application returns response (with header)
+
+From here, normal flow according to identity middleware guide can be followed
+
+Normal client application flow:
+
+* Client POSTs to a login endpoint, is authorized by server
+* Client receives response, extracts the authorization token in the specified header
+* On future requests (including logout), the client builds a bearer authentication header with the returned token
+
+### SQL Variants supported
 
 * SQLite 
 * MySQL
 * Postgres
 
-## Example
+### Features
+
+_Default_: SQLite, MySQL, Postgres
+
+_sqlite_: Include SQLite support
+
+_mysql_: Include MySQL support
+
+_postgres_: Include PostgreSQL supprt
+
+## Server Example
 
 ```rust
 extern crate actix_web;
@@ -47,6 +72,7 @@ fn logout(mut req: HttpRequest) -> impl Responder {
 
 fn main() {
     server::new(|| {
+		// Construct our policy, passing the address and any options
         let policy = SqlIdentityBuilder::new("my.db")
             .pool_size(POOL_SIZE);
 
@@ -60,6 +86,115 @@ fn main() {
     })
     .bind("127.0.0.1:7070").unwrap()
     .run();
+}
+```
+
+## Client Example
+
+```rust
+extern crate reqwest;
+
+#[macro_use]
+extern crate hyper;
+
+use hyper::header::{Authorization, Bearer, Headers};
+use reqwest::{Client, Response};
+
+// Build our custom header that will contain our returned token
+header! { (XActixAuth, "actix-auth") => [String] }
+
+/// Builds a GET request to send to the server, with optional authentication
+///
+/// # Arguments
+///
+/// * `client` - Client to build request with
+/// * `uri` - Endpoint to target (e.g., /index, /profile, etc)
+/// * `token` - An optional authentication token
+fn build_get(client: &Client, uri: &str, token: Option<&str>) -> Response {
+    let mut req = client
+        .get(format!("http://127.0.0.1:7070{}", uri).as_str());
+
+    if let Some(token) = token {
+        let mut headers = Headers::new();
+        headers.set(Authorization(Bearer {
+            token: token.to_owned(),
+        }));
+        req.headers(headers);
+    }
+
+    let req = req.build()
+        .expect("failed to build request");
+
+    client.execute(req).expect("failed to send request")
+}
+
+/// Builds a POST request to send to the server, with optional authentication
+///
+/// # Arguments
+///
+/// * `client` - Client to build request with
+/// * `uri` - Endpoint to target (e.g., /login, /logout)
+/// * `token` - An optional authentication token
+fn build_post(client: &Client, uri: &str, token: Option<&str>) -> Response {
+    let mut req = client
+        .post(format!("http://127.0.0.1:7070{}", uri).as_str());
+
+    if let Some(token) = token {
+        let mut headers = Headers::new();
+        headers.set(Authorization(Bearer {
+            token: token.to_owned(),
+        }));
+        req.headers(headers);
+    }
+
+    let req = req.build()
+        .expect("failed to build request");
+
+    client.execute(req).expect("failed to send request")
+}
+
+/// Pretty print a response
+///
+/// # Arguments
+///
+/// * `resp` - Response to print
+fn print_response(resp: &mut Response) {
+    let uri = resp.url().clone();
+    println!("[{0: <15}] {1: <30} {2}", resp.status(), uri.as_str(), resp.text().expect("failed to read response"));
+}
+
+fn main() {
+    let client = Client::new();
+
+    // Get Index
+    let mut resp = build_get(&client, "/", None); 
+    print_response(&mut resp);
+
+    // Get Profile (no auth)
+    let mut resp = build_get(&client, "/profile", None);
+    print_response(&mut resp);
+
+    // Login
+    let mut resp = build_post(&client, "/login", None);
+    print_response(&mut resp);
+
+    // Extract the auth token from the header
+    // (Header field can be changed on server, default is used here)
+    let hdrs = resp.headers();
+    let token = hdrs.get::<XActixAuth>().unwrap();
+    //println!("[token]: {:?}", token.0);
+
+    // Get Profile (auth)
+    let mut resp = build_get(&client, "/profile", Some(token.0.as_ref()));
+    print_response(&mut resp);
+
+    // Logout
+    let mut resp = build_post(&client, "/logout", Some(token.0.as_str()));
+    print_response(&mut resp);
+
+    // Get Profile (auth)
+    let mut resp = build_get(&client, "/profile", Some(token.0.as_ref()));
+    print_response(&mut resp);
 }
 ```
 
