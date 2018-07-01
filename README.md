@@ -1,6 +1,7 @@
 # Actix Database Identity Provider
 
 [![Build Status](https://travis-ci.org/kvnallsn/actix-web-database-identity.svg?branch=master)](https://travis-ci.org/kvnallsn/actix-web-database-identity)
+[![docs.rs](https://docs.rs/actix-web-sql-identity/badge.svg)](https://docs.rs/crate/actix-web-sql-identity/)
 
 SQL database (diesel) integration for actix framework
 

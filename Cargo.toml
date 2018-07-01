@@ -3,6 +3,7 @@ name = "actix-web-sql-identity"
 version = "0.2.1"
 authors = ["Kevin Allison <kvnallsn@gmail.com>"]
 description = "A SQL-backend identity provider for Actix Web's identity system"
+documentation = "https://docs.rs/crate/actix-web-sql-identity"
 repository = "https://github.com/kvnallsn/actix-web-database-identity"
 readme = "README.md"
 keywords = ["identity", "actix", "database", "sql", "postgres"]
