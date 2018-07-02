@@ -84,6 +84,7 @@ impl SqlActor {
         {
             let _ = n;
             let _ = s;
+            warn!("SQLite support not enabled!");
             Err(SqlIdentityError::SqlVariantNotSupported.into())
         }
     }
@@ -109,6 +110,7 @@ impl SqlActor {
         {
             let _ = n;
             let _ = s;
+            warn!("MySQL support not enabled!");
             Err(SqlIdentityError::SqlVariantNotSupported.into())
         }
     }
@@ -134,6 +136,7 @@ impl SqlActor {
         {
             let _ = n;
             let _ = s;
+            warn!("PostgreSQL support not enabled!");
             Err(SqlIdentityError::SqlVariantNotSupported.into())
         }
     }
@@ -189,7 +192,10 @@ impl Handler<FindIdentity> for SqlActor {
 
         match results.len() {
             1 => Ok(results.remove(0)),
-            _ => Err(SqlIdentityError::SqlTokenNotFound.into()),
+            n => {
+                warn!("Too Many/Few results ({})", n);
+                Err(SqlIdentityError::SqlTokenNotFound.into())
+            },
         }
     }
 }

@@ -63,6 +63,8 @@ extern crate rand;
 extern crate diesel;
 #[macro_use]
 extern crate failure_derive;
+#[macro_use]
+extern crate log;
 
 mod sql;
 
@@ -237,9 +239,9 @@ impl SqlIdentityInner {
                 .and_then(move |res| match res {
                     Ok(_) => Ok(resp),
                     Err(e) => {
-                        println!("[SII::save] ERROR: {:?}", e);
+                        error!("ERROR: {:?}", e);
                         Ok(HttpResponse::InternalServerError().finish())
-                    }
+                    },
                 }),
         )
     }
@@ -258,7 +260,10 @@ impl SqlIdentityInner {
                 .map_err(ActixWebError::from)
                 .and_then(move |res| match res {
                     Ok(_) => Ok(resp),
-                    Err(_) => Ok(HttpResponse::InternalServerError().finish()),
+                    Err(e) => {
+                        error!("ERROR: {:?}", e);
+                        Ok(HttpResponse::InternalServerError().finish())
+                    },
                 }),
         )
     }
@@ -291,7 +296,10 @@ impl SqlIdentityInner {
                             .map_err(ActixWebError::from)
                             .and_then(move |res| match res {
                                 Ok(val) => Ok(Some(val)),
-                                Err(_) => Ok(None),
+                                Err(e) => {
+                                    error!("ERROR: {:?}", e);
+                                    Ok(None)
+                                },
                             }),
                     );
                 }
@@ -369,6 +377,7 @@ impl SqlIdentityBuilder {
     /// Creates a SQLite identity policy, returning the policy if successful,
     /// or an error if unsuccessful
     pub fn sqlite(self) -> Result<SqlIdentityPolicy, Error> {
+        info!("Registering new SQLite identity policy");
         Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(
                         SqlActor::sqlite(self.pool, &self.uri)?,
                         self.hdr,
@@ -378,6 +387,7 @@ impl SqlIdentityBuilder {
     /// Creates a MySQL identity policy, returning the policy if successful,
     /// or an error if unsuccessful
     pub fn mysql(self) -> Result<SqlIdentityPolicy, Error> {
+        info!("Registering new MySQL identity policy");
         Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(
                         SqlActor::mysql(self.pool, &self.uri)?,
                         self.hdr,
@@ -387,6 +397,7 @@ impl SqlIdentityBuilder {
     /// Creates a PostgreSQL identity policy, returning the policy if successful,
     /// or an error if unsuccessful
     pub fn postgresql(self) -> Result<SqlIdentityPolicy, Error> {
+        info!("Registering new PostgreSQL identity policy");
         Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(
                         SqlActor::pg(self.pool, &self.uri)?,
                         self.hdr,
