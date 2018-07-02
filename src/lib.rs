@@ -51,10 +51,10 @@
 //!     .run();
 //! }
 //! ```
-
 extern crate actix;
 extern crate actix_web;
 extern crate base64;
+extern crate chrono;
 extern crate failure;
 extern crate futures;
 extern crate rand;
@@ -65,6 +65,9 @@ extern crate diesel;
 extern crate failure_derive;
 
 mod sql;
+
+use chrono::prelude::Utc;
+use chrono::NaiveDateTime;
 
 use std::rc::Rc;
 
@@ -114,6 +117,8 @@ pub struct SqlIdentity {
     state: SqlIdentityState,
     identity: Option<String>,
     token: Option<String>,
+    ip: Option<String>,
+    created: NaiveDateTime,
     inner: Rc<SqlIdentityInner>,
 }
 
@@ -157,7 +162,7 @@ impl Identity for SqlIdentity {
                 let identity = self.identity.as_ref().expect("[SIS::Saved] Identity is None!");
                 self.state = SqlIdentityState::Unchanged;
                 Ok(MiddlewareResponse::Future(
-                    self.inner.save(token, identity, resp),
+                    self.inner.save(token, identity, self.ip.clone(), self.created, resp),
                 ))
             }
 
@@ -203,6 +208,8 @@ impl SqlIdentityInner {
         &self,
         token: &str,
         userid: &str,
+        ip: Option<String>,
+        created: NaiveDateTime,
         mut resp: HttpResponse,
     ) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
         {
@@ -211,11 +218,16 @@ impl SqlIdentityInner {
             headers.append(self.hdr, token.parse().expect("[SII::save] token failed to parse"));
         }
 
+        let now = Utc::now();
+
         Box::new(
             self.addr
                 .send(UpdateIdentity {
                     token: token.to_string(),
                     userid: userid.to_string(),
+                    ip: ip,
+                    created: created,
+                    modified: now.naive_utc(),
                 })
                 .map_err(ActixWebError::from)
                 .and_then(move |res| match res {
@@ -389,19 +401,30 @@ impl<S> IdentityPolicy<S> for SqlIdentityPolicy {
     /// * `req` - The HTTP request recieved
     fn from_request(&self, req: &mut HttpRequest<S>) -> Self::Future {
         let inner = Rc::clone(&self.0);
+        let ip = req.connection_info().remote().unwrap_or("0.0.0.0").to_owned();
 
         Box::new(self.0.load(req).map(move |ident| {
             if let Some(id) = ident {
+
+                let (state, uip) = match id.ip {
+                    Some(ref nip) if &ip == nip  => (SqlIdentityState::Unchanged, nip.clone()),
+                    _ => (SqlIdentityState::Saved, ip),
+                };
+
                 SqlIdentity {
                     identity: Some(id.userid),
                     token: Some(id.token),
-                    state: SqlIdentityState::Unchanged,
+                    ip: Some(uip),
+                    created: id.created,
+                    state: state,
                     inner: inner,
                 }
             } else {
                 SqlIdentity {
                     identity: None,
                     token: None,
+                    ip: None,
+                    created: Utc::now().naive_utc(),
                     state: SqlIdentityState::Unchanged,
                     inner: inner,
                 }

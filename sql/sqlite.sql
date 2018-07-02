@@ -1,4 +1,7 @@
 CREATE TABLE identities (
 	token TEXT PRIMARY KEY NOT NULL,
-	userid TEXT NOT NULL
+	userid TEXT NOT NULL,
+	ip TEXT,
+	created DATETIME NOT NULL,
+	modified DATETIME NOT NULL
 );

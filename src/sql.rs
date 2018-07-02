@@ -5,6 +5,8 @@ use actix::prelude::{Actor, Handler, Message, Syn};
 use actix::sync::{SyncArbiter, SyncContext};
 use actix::Addr;
 
+use chrono::NaiveDateTime;
+
 // Diesel (SQL ORM) Imports
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::{self, ExpressionMethods, QueryDsl, RunQueryDsl};
@@ -27,6 +29,9 @@ table! {
     identities (token) {
         token -> Text,
         userid -> Text,
+        ip -> Nullable<Text>,
+        created -> Timestamp,
+        modified -> Timestamp,
     }
 }
 
@@ -34,6 +39,9 @@ table! {
 pub struct SqlIdentityModel {
     pub token: String,
     pub userid: String,
+    pub ip: Option<String>,
+    pub created: NaiveDateTime,
+    pub modified: NaiveDateTime,
 }
 
 /// Represents the different types of pools available
@@ -190,6 +198,9 @@ impl Handler<FindIdentity> for SqlActor {
 pub struct UpdateIdentity {
     pub token: String,
     pub userid: String,
+    pub ip: Option<String>,
+    pub created: NaiveDateTime,
+    pub modified: NaiveDateTime,
 }
 
 impl Message for UpdateIdentity {
