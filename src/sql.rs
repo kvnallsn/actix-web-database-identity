@@ -30,6 +30,7 @@ table! {
         token -> Text,
         userid -> Text,
         ip -> Nullable<Text>,
+        useragent -> Nullable<Text>,
         created -> Timestamp,
         modified -> Timestamp,
     }
@@ -40,6 +41,7 @@ pub struct SqlIdentityModel {
     pub token: String,
     pub userid: String,
     pub ip: Option<String>,
+    pub useragent: Option<String>,
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,
 }
@@ -199,6 +201,7 @@ pub struct UpdateIdentity {
     pub token: String,
     pub userid: String,
     pub ip: Option<String>,
+    pub useragent: Option<String>,
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,
 }

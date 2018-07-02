@@ -81,6 +81,7 @@ use actix_web::error::Error as ActixWebError;
 use actix_web::middleware::identity::{Identity, IdentityPolicy};
 use actix_web::middleware::Response as MiddlewareResponse;
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
+use actix_web::http::header::HeaderValue;
 
 // Futures imports
 use futures::future::ok as FutOk;
@@ -107,7 +108,7 @@ enum SqlIdentityError {
 }
 
 enum SqlIdentityState {
-    Saved,
+    Changed,
     Deleted,
     Unchanged,
 }
@@ -118,6 +119,7 @@ pub struct SqlIdentity {
     identity: Option<String>,
     token: Option<String>,
     ip: Option<String>,
+    user_agent: Option<String>,
     created: NaiveDateTime,
     inner: Rc<SqlIdentityInner>,
 }
@@ -141,7 +143,7 @@ impl Identity for SqlIdentity {
         rand::thread_rng().fill(&mut arr[..]);
         self.token = Some(base64::encode(&arr));
 
-        self.state = SqlIdentityState::Saved;
+        self.state = SqlIdentityState::Changed;
     }
 
     /// Forgets a user, by deleting the identity
@@ -157,12 +159,12 @@ impl Identity for SqlIdentity {
     /// * `resp` - HTTP response to modify
     fn write(&mut self, resp: HttpResponse) -> Result<MiddlewareResponse, ActixWebError> {
         match self.state {
-            SqlIdentityState::Saved if self.token.is_some() && self.identity.is_some() => {
+            SqlIdentityState::Changed if self.token.is_some() && self.identity.is_some() => {
                 let token = self.token.as_ref().expect("[SIS::Saved] Token is None!");
                 let identity = self.identity.as_ref().expect("[SIS::Saved] Identity is None!");
                 self.state = SqlIdentityState::Unchanged;
                 Ok(MiddlewareResponse::Future(
-                    self.inner.save(token, identity, self.ip.clone(), self.created, resp),
+                    self.inner.save(token, identity, self.ip.clone(), self.user_agent.clone(), self.created, resp),
                 ))
             }
 
@@ -172,7 +174,7 @@ impl Identity for SqlIdentity {
                 Ok(MiddlewareResponse::Future(self.inner.remove(token, resp)))
             }
 
-            SqlIdentityState::Deleted | SqlIdentityState::Saved => {
+            SqlIdentityState::Deleted | SqlIdentityState::Changed => {
                 // Not logged in/log in failed
                 Ok(MiddlewareResponse::Done(
                     HttpResponse::BadRequest().finish(),
@@ -209,6 +211,7 @@ impl SqlIdentityInner {
         token: &str,
         userid: &str,
         ip: Option<String>,
+        user_agent: Option<String>,
         created: NaiveDateTime,
         mut resp: HttpResponse,
     ) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
@@ -226,6 +229,7 @@ impl SqlIdentityInner {
                     token: token.to_string(),
                     userid: userid.to_string(),
                     ip: ip,
+                    useragent: user_agent,
                     created: created,
                     modified: now.naive_utc(),
                 })
@@ -402,21 +406,24 @@ impl<S> IdentityPolicy<S> for SqlIdentityPolicy {
     fn from_request(&self, req: &mut HttpRequest<S>) -> Self::Future {
         let inner = Rc::clone(&self.0);
         let ip = req.connection_info().remote().unwrap_or("0.0.0.0").to_owned();
+        let unk = HeaderValue::from_static("Unknown");
+        let ua = req.headers().get("user-agent").unwrap_or(&unk).to_str().unwrap_or("Unknown").to_owned();
 
         Box::new(self.0.load(req).map(move |ident| {
             if let Some(id) = ident {
 
-                let (state, uip) = match id.ip {
+                let (_state, uip) = match id.ip {
                     Some(ref nip) if &ip == nip  => (SqlIdentityState::Unchanged, nip.clone()),
-                    _ => (SqlIdentityState::Saved, ip),
+                    _ => (SqlIdentityState::Changed, ip),
                 };
 
                 SqlIdentity {
                     identity: Some(id.userid),
                     token: Some(id.token),
                     ip: Some(uip),
+                    user_agent: Some(ua),
                     created: id.created,
-                    state: state,
+                    state: SqlIdentityState::Changed,
                     inner: inner,
                 }
             } else {
@@ -424,6 +431,7 @@ impl<S> IdentityPolicy<S> for SqlIdentityPolicy {
                     identity: None,
                     token: None,
                     ip: None,
+                    user_agent: Some(ua),
                     created: Utc::now().naive_utc(),
                     state: SqlIdentityState::Unchanged,
                     inner: inner,
