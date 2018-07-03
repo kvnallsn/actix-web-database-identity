@@ -6,6 +6,7 @@ use actix::sync::{SyncArbiter, SyncContext};
 use actix::Addr;
 
 use chrono::NaiveDateTime;
+use chrono::prelude::Utc;
 
 // Diesel (SQL ORM) Imports
 use diesel::r2d2::{ConnectionManager, Pool};
@@ -23,7 +24,7 @@ use diesel::pg::PgConnection;
 // Failure (error management system) Imports
 use failure::Error;
 
-use super::SqlIdentityError;
+use super::{SqlIdentity, SqlIdentityError};
 
 table! {
     identities (token) {
@@ -194,7 +195,7 @@ impl Handler<FindIdentity> for SqlActor {
             1 => Ok(results.remove(0)),
             n => {
                 warn!("Too Many/Few results ({})", n);
-                Err(SqlIdentityError::SqlTokenNotFound.into())
+                Err(SqlIdentityError::TokenNotFound.into())
             },
         }
     }
@@ -210,6 +211,22 @@ pub struct UpdateIdentity {
     pub useragent: Option<String>,
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,
+}
+
+impl UpdateIdentity {
+    pub fn new(ident: &SqlIdentity) -> UpdateIdentity {
+        let now = Utc::now();
+
+        //self.identity.as_ref().map(|s| s.as_ref())
+        UpdateIdentity {
+            token: ident.token.as_ref().map(|s| s.as_ref()).unwrap_or("").to_string(),
+            userid: ident.identity.as_ref().map(|s| s.as_ref()).unwrap_or("").to_string(),
+            ip: ident.ip.clone(),
+            useragent: ident.user_agent.clone(),
+            created: ident.created,
+            modified: now.naive_utc(),
+        }
+    }
 }
 
 impl Message for UpdateIdentity {

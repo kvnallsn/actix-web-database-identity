@@ -2,6 +2,7 @@ Version 0.2.2 (XX July 2018)
 ======
 * Added new database fields (created, modified, ip and user-agent)
 * Improved logging support (migrated away from println)
+* Improved error handling, more error types added
 
 Version 0.2.1 (01 July 2018)
 ======

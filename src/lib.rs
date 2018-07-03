@@ -79,14 +79,14 @@ use actix::prelude::Syn;
 use actix::Addr;
 
 // Actix Web imports
-use actix_web::error::Error as ActixWebError;
+use actix_web::error::{self, Error as ActixWebError};
 use actix_web::middleware::identity::{Identity, IdentityPolicy};
 use actix_web::middleware::Response as MiddlewareResponse;
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use actix_web::http::header::HeaderValue;
 
 // Futures imports
-use futures::future::ok as FutOk;
+use futures::future::{ok as FutOk, err as FutErr};
 use futures::Future;
 
 // (Local) Sql Imports
@@ -106,7 +106,13 @@ enum SqlIdentityError {
     SqlVariantNotSupported,
 
     #[fail(display = "token not found")]
-    SqlTokenNotFound,
+    TokenNotFound,
+
+    #[fail(display = "token failed to set in header")]
+    TokenNotSet,
+
+    #[fail(display = "token not provided but required, bad request")]
+    TokenRequired,
 }
 
 enum SqlIdentityState {
@@ -162,11 +168,9 @@ impl Identity for SqlIdentity {
     fn write(&mut self, resp: HttpResponse) -> Result<MiddlewareResponse, ActixWebError> {
         match self.state {
             SqlIdentityState::Changed if self.token.is_some() && self.identity.is_some() => {
-                let token = self.token.as_ref().expect("[SIS::Saved] Token is None!");
-                let identity = self.identity.as_ref().expect("[SIS::Saved] Identity is None!");
                 self.state = SqlIdentityState::Unchanged;
                 Ok(MiddlewareResponse::Future(
-                    self.inner.save(token, identity, self.ip.clone(), self.user_agent.clone(), self.created, resp),
+                    self.inner.save(self, resp),
                 ))
             }
 
@@ -178,9 +182,7 @@ impl Identity for SqlIdentity {
 
             SqlIdentityState::Deleted | SqlIdentityState::Changed => {
                 // Not logged in/log in failed
-                Ok(MiddlewareResponse::Done(
-                    HttpResponse::BadRequest().finish(),
-                ))
+                Err(error::ErrorBadRequest(SqlIdentityError::TokenRequired))
             }
 
             _ => {
@@ -210,37 +212,36 @@ impl SqlIdentityInner {
     /// Saves an identity to the backend provider (SQL database)
     fn save(
         &self,
-        token: &str,
-        userid: &str,
-        ip: Option<String>,
-        user_agent: Option<String>,
-        created: NaiveDateTime,
+        identity: &SqlIdentity,
         mut resp: HttpResponse,
     ) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
-        {
+
+        if let Some(ref token) = identity.token {
             // Add the new token/identity to response headers
             let headers = resp.headers_mut();
-            headers.append(self.hdr, token.parse().expect("[SII::save] token failed to parse"));
-        }
 
-        let now = Utc::now();
+            if let Ok(token) = token.parse() {
+                headers.append(self.hdr, token);
+            } else {
+                error!("Failed to parse token to place in header!");
+                return Box::new(FutErr(error::ErrorInternalServerError(
+                            SqlIdentityError::TokenNotSet)));
+            }
+        } else {
+            error!("Identity token not set!");
+            return Box::new(FutErr(error::ErrorUnauthorized(
+                        SqlIdentityError::TokenNotFound)));
+        }
 
         Box::new(
             self.addr
-                .send(UpdateIdentity {
-                    token: token.to_string(),
-                    userid: userid.to_string(),
-                    ip: ip,
-                    useragent: user_agent,
-                    created: created,
-                    modified: now.naive_utc(),
-                })
+                .send(UpdateIdentity::new(identity))
                 .map_err(ActixWebError::from)
                 .and_then(move |res| match res {
                     Ok(_) => Ok(resp),
                     Err(e) => {
                         error!("ERROR: {:?}", e);
-                        Ok(HttpResponse::InternalServerError().finish())
+                        Err(error::ErrorInternalServerError(e))
                     },
                 }),
         )
@@ -262,7 +263,7 @@ impl SqlIdentityInner {
                     Ok(_) => Ok(resp),
                     Err(e) => {
                         error!("ERROR: {:?}", e);
-                        Ok(HttpResponse::InternalServerError().finish())
+                        Err(error::ErrorInternalServerError(e))
                     },
                 }),
         )
@@ -297,7 +298,7 @@ impl SqlIdentityInner {
                             .and_then(move |res| match res {
                                 Ok(val) => Ok(Some(val)),
                                 Err(e) => {
-                                    error!("ERROR: {:?}", e);
+                                    warn!("WARN: {:?}", e);
                                     Ok(None)
                                 },
                             }),
