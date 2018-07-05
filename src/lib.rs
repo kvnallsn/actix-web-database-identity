@@ -36,7 +36,7 @@
 //!
 //! fn main() {
 //!     server::new(|| {
-//!         let policy = SqlIdentityBuilder::new("my.db")
+//!         let policy = SqlIdentityBuilder::new("sqlite://my.db")
 //!             .pool_size(POOL_SIZE);
 //!
 //!         App::new()
@@ -44,7 +44,7 @@
 //!            .route("/profile", http::Method::GET, profile)
 //!            .route("/logout", http::Method::POST, logout)
 //!            .middleware(IdentityService::new(
-//!                     policy.sqlite()
+//!                     policy.finish()
 //!                         .expect("failed to connect to database")))
 //!     })
 //!     .bind("127.0.0.1:7070").unwrap()
@@ -90,7 +90,7 @@ use futures::future::{ok as FutOk, err as FutErr};
 use futures::Future;
 
 // (Local) Sql Imports
-use sql::{DeleteIdentity, FindIdentity, SqlActor, SqlIdentityModel, UpdateIdentity};
+use sql::{DeleteIdentity, FindIdentity, SqlActor, SqlIdentityModel, UpdateIdentity, Variant};
 
 // Rand Imports (thread secure!)
 use rand::Rng;
@@ -318,7 +318,9 @@ pub struct SqlIdentityBuilder {
     pool: usize,
     uri: String,
     hdr: &'static str,
+    variant: Variant,
 }
+
 
 impl SqlIdentityBuilder {
     /// Creates a new SqlIdentityBuilder that constructs a SqlIdentityPolicy
@@ -338,9 +340,10 @@ impl SqlIdentityBuilder {
     /// use actix_web_sql_identity::SqlIdentityBuilder;
     /// 
     /// // Create the identity policy
-    /// let policy = SqlIdentityBuilder::new("database.sqlite3")
+    /// let policy = SqlIdentityBuilder::new("postgres://user:pass@host/database")
     ///                 .pool_size(5)
-    ///                 .sqlite()
+    ///                 .response_header("X-MY-RESPONSE")
+    ///                 .finish()
     ///                 .expect("failed to open database");
     ///
     /// let app = App::new().middleware(IdentityService::new(
@@ -348,10 +351,25 @@ impl SqlIdentityBuilder {
     /// ));
     /// ```
     pub fn new<T: Into<String>>(uri: T) -> SqlIdentityBuilder {
+        let uri: String = uri.into();
+        let variant = SqlIdentityBuilder::variant(&uri);
+
         SqlIdentityBuilder {
             pool: DEFAULT_POOL_SIZE,
-            uri: uri.into(),
+            uri: uri,
             hdr: DEFAULT_RESPONSE_HDR,
+            variant: variant,
+        }
+    }
+
+    fn variant(uri: &str) -> Variant {
+
+        if uri.starts_with("mysql://") {
+            return Variant::Mysql;
+        } else if uri.starts_with("postgres://") || uri.starts_with("postgresql://") {
+            return Variant::Pg;
+        } else {
+            return Variant::Sqlite;
         }
     }
 
@@ -375,34 +393,49 @@ impl SqlIdentityBuilder {
         self
     }
 
-    /// Creates a SQLite identity policy, returning the policy if successful,
-    /// or an error if unsuccessful
-    pub fn sqlite(self) -> Result<SqlIdentityPolicy, Error> {
-        info!("Registering new SQLite identity policy");
+    /// Finish building this SQL identity policy.  This will attempt
+    /// to construct the a pool of connections to the database 
+    /// specified.  The type of database is determined by the uri set.
+    /// On success, a new SqlIdentityPolicy is returned, on failure
+    /// an error is returned.
+    pub fn finish(self) -> Result<SqlIdentityPolicy, Error> {
+        info!("Registering identity provider: {:?}", self.variant);
+
         Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(
-                        SqlActor::sqlite(self.pool, &self.uri)?,
-                        self.hdr,
+            match self.variant {
+                Variant::Sqlite => SqlActor::sqlite(self.pool, &self.uri)?,
+                Variant::Mysql => SqlActor::mysql(self.pool, &self.uri)?,
+                Variant::Pg => SqlActor::pg(self.pool, &self.uri)?,
+            },
+            self.hdr,
         ))))
     }
 
-    /// Creates a MySQL identity policy, returning the policy if successful,
-    /// or an error if unsuccessful
-    pub fn mysql(self) -> Result<SqlIdentityPolicy, Error> {
-        info!("Registering new MySQL identity policy");
-        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(
-                        SqlActor::mysql(self.pool, &self.uri)?,
-                        self.hdr,
-        ))))
+    /// Forces a SQLite identity policy to be created.  This function does
+    /// not normally need to be used, `new` will automatically determine
+    /// the appropriate variant by parsing the connection string.  This function
+    /// exists if the parsing fails
+    pub fn sqlite(mut self) -> SqlIdentityBuilder {
+        self.variant = Variant::Sqlite;
+        self
     }
 
-    /// Creates a PostgreSQL identity policy, returning the policy if successful,
-    /// or an error if unsuccessful
-    pub fn postgresql(self) -> Result<SqlIdentityPolicy, Error> {
-        info!("Registering new PostgreSQL identity policy");
-        Ok(SqlIdentityPolicy(Rc::new(SqlIdentityInner::new(
-                        SqlActor::pg(self.pool, &self.uri)?,
-                        self.hdr,
-        ))))
+    /// Forces a MySQL identity policy to be created.  This function does
+    /// not normally need to be used, `new` will automatically determine
+    /// the appropriate variant by parsing the connection string.  This function
+    /// exists if the parsing fails
+    pub fn mysql(mut self) -> SqlIdentityBuilder {
+        self.variant = Variant::Mysql;
+        self
+    }
+
+    /// Forces a PostgreSQL identity policy to be created.  This function does
+    /// not normally need to be used, `new` will automatically determine
+    /// the appropriate variant by parsing the connection string.  This function
+    /// exists if the parsing fails
+    pub fn postgresql(mut self) -> SqlIdentityBuilder {
+        self.variant = Variant::Pg;
+        self
     }
 }
 

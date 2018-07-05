@@ -44,10 +44,14 @@ _postgres_: Include PostgreSQL supprt
 
 This crate requires a table named *identities* with the following fields:
 
-| Field  | Type     | Constraints                   | Description                                                 |
-| ------ | -------- | ----------------------------- | ----------------------------------------------------------- |
-| token  | CHAR(32) | PRIMARY KEY, NOT NULL, UNIQUE | The auto-generated token field, will be used to lookup user |
-| userid | TEXT     | NOT NULL                      | The user id to remember, probably a key in another table    |
+| Field     | Type      | Constraints                   | Description                                                 |
+| --------- | --------- | ----------------------------- | ----------------------------------------------------------- |
+| token     | CHAR(32)  | PRIMARY KEY, NOT NULL, UNIQUE | The auto-generated token field, will be used to lookup user |
+| userid    | TEXT      | NOT NULL                      | The user id to remember, probably a key in another table    |
+| ip        | TEXT      |                               | The IP the user most recently connected from                |
+| useragent | TEXT      |                               | The user-agent of the most recent connection                |
+| created   | TIMESTAMP | NOT NULL                      | Timestamp (w/out timezone) this token was created           |
+| modified  | TIMESTAMP | NOT NULL                      | Timestamp (w/out timezone) this token was last used         |
 
 Example SQL files for SQLite, MySQL, and PostgreSQL are available int the sql/ folder on the repository
 

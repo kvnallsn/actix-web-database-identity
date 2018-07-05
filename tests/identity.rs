@@ -176,7 +176,7 @@ fn sqlite_login_logout() {
             dotenv::var("SQLITE_PATH").unwrap(),
             dotenv::var("SQLITE_DB2").unwrap(),
     );
-    let srv = common::build_test_server(SqlVariant::Sqlite, uri);
+    let srv = common::build_test_server(uri);
     login_logout(srv);
 }
 
@@ -238,7 +238,7 @@ fn sqlite_multiple_logout() {
             dotenv::var("SQLITE_PATH").unwrap(),
             dotenv::var("SQLITE_DB3").unwrap(),
     );
-    let srv = common::build_test_server(SqlVariant::Sqlite, uri);
+    let srv = common::build_test_server(uri);
     multiple_logout(srv);
 }
 

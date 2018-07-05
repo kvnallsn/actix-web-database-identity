@@ -56,7 +56,7 @@ pub fn build_test_server_from_env(variant: SqlVariant) -> TestServer {
         }
     };
 
-    build_test_server(variant, uri)
+    build_test_server(uri)
 }
 
 /// Builds a new test server using a specific SQL variant and
@@ -65,9 +65,8 @@ pub fn build_test_server_from_env(variant: SqlVariant) -> TestServer {
 ///
 /// # Arguments
 ///
-/// * `sql` - The SQL variant to use (Sqlite, MySQL, or PostgreSQL)
 /// * `uri` - Database connection string (e.g., sqlite://, mysql://, postgres://)
-pub fn build_test_server<S: Into<String>>(sql: SqlVariant, uri: S) -> TestServer {
+pub fn build_test_server<S: Into<String>>(uri: S) -> TestServer {
     let uri = uri.into();
     println!("Connecting to: {}", uri);
 
@@ -77,20 +76,10 @@ pub fn build_test_server<S: Into<String>>(sql: SqlVariant, uri: S) -> TestServer
         let policy = SqlIdentityBuilder::new(uri.clone())
             .response_header(RESPONSE_HEADER);
 
-        app.middleware(IdentityService::new(match sql {
-            SqlVariant::Sqlite => {
-                policy.sqlite()
-                    .expect("failed to connect to sqlite")
-            }
-            SqlVariant::MySql => {
-                policy.mysql()
-                    .expect("failed to connect to mysql")
-            }
-            SqlVariant::Postgres => {
-                policy.postgresql()
-                    .expect("failed to connect to postgres")
-            }
-        })).resource("/", |r| r.get().h(|_| HttpResponse::Ok()))
+        app.middleware(IdentityService::new(
+                policy.finish()
+                    .expect("failed to connect to database")
+        )).resource("/", |r| r.get().h(|_| HttpResponse::Ok()))
             .resource("/login", |r| {
                 r.post().h(|mut req: HttpRequest| {
                     req.remember("mike".to_string());

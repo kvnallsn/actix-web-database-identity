@@ -37,6 +37,14 @@ table! {
     }
 }
 
+/// Describes what type of SQL connection to create
+#[derive(Debug)]
+pub enum Variant {
+    Sqlite,
+    Mysql,
+    Pg,
+}
+
 #[derive(Debug, Queryable)]
 pub struct SqlIdentityModel {
     pub token: String,
