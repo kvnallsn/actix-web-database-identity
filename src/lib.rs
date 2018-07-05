@@ -1,7 +1,7 @@
 //! A database (SQL) Identity Provider
 //!
 //! Provides a way to interact with SQL databases with actix-web's
-//! identity policy. 
+//! identity policy.
 //!
 //! # Example
 //!
@@ -28,7 +28,7 @@
 //!         "Hello, anonymous user!".to_string()
 //!     }
 //! }
-//! 
+//!
 //! fn logout(mut req: HttpRequest) -> impl Responder {
 //!     req.forget();
 //!    "Logged out!".to_string()
@@ -80,13 +80,13 @@ use actix::Addr;
 
 // Actix Web imports
 use actix_web::error::{self, Error as ActixWebError};
+use actix_web::http::header::HeaderValue;
 use actix_web::middleware::identity::{Identity, IdentityPolicy};
 use actix_web::middleware::Response as MiddlewareResponse;
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
-use actix_web::http::header::HeaderValue;
 
 // Futures imports
-use futures::future::{ok as FutOk, err as FutErr};
+use futures::future::{err as FutErr, ok as FutOk};
 use futures::Future;
 
 // (Local) Sql Imports
@@ -95,7 +95,7 @@ use sql::{DeleteIdentity, FindIdentity, SqlActor, SqlIdentityModel, UpdateIdenti
 // Rand Imports (thread secure!)
 use rand::Rng;
 
-const DEFAULT_RESPONSE_HDR: &'static str= "X-Actix-Auth";
+const DEFAULT_RESPONSE_HDR: &'static str = "X-Actix-Auth";
 const DEFAULT_POOL_SIZE: usize = 3;
 
 /// Error representing different failure cases
@@ -169,9 +169,7 @@ impl Identity for SqlIdentity {
         match self.state {
             SqlIdentityState::Changed if self.token.is_some() && self.identity.is_some() => {
                 self.state = SqlIdentityState::Unchanged;
-                Ok(MiddlewareResponse::Future(
-                    self.inner.save(self, resp),
-                ))
+                Ok(MiddlewareResponse::Future(self.inner.save(self, resp)))
             }
 
             SqlIdentityState::Deleted if self.token.is_some() => {
@@ -215,7 +213,6 @@ impl SqlIdentityInner {
         identity: &SqlIdentity,
         mut resp: HttpResponse,
     ) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
-
         if let Some(ref token) = identity.token {
             // Add the new token/identity to response headers
             let headers = resp.headers_mut();
@@ -225,12 +222,14 @@ impl SqlIdentityInner {
             } else {
                 error!("Failed to parse token to place in header!");
                 return Box::new(FutErr(error::ErrorInternalServerError(
-                            SqlIdentityError::TokenNotSet)));
+                    SqlIdentityError::TokenNotSet,
+                )));
             }
         } else {
             error!("Identity token not set!");
             return Box::new(FutErr(error::ErrorUnauthorized(
-                        SqlIdentityError::TokenNotFound)));
+                SqlIdentityError::TokenNotFound,
+            )));
         }
 
         Box::new(
@@ -242,7 +241,7 @@ impl SqlIdentityInner {
                     Err(e) => {
                         error!("ERROR: {:?}", e);
                         Err(error::ErrorInternalServerError(e))
-                    },
+                    }
                 }),
         )
     }
@@ -264,7 +263,7 @@ impl SqlIdentityInner {
                     Err(e) => {
                         error!("ERROR: {:?}", e);
                         Err(error::ErrorInternalServerError(e))
-                    },
+                    }
                 }),
         )
     }
@@ -300,7 +299,7 @@ impl SqlIdentityInner {
                                 Err(e) => {
                                     warn!("WARN: {:?}", e);
                                     Ok(None)
-                                },
+                                }
                             }),
                     );
                 }
@@ -321,7 +320,6 @@ pub struct SqlIdentityBuilder {
     variant: Variant,
 }
 
-
 impl SqlIdentityBuilder {
     /// Creates a new SqlIdentityBuilder that constructs a SqlIdentityPolicy
     ///
@@ -338,7 +336,7 @@ impl SqlIdentityBuilder {
     /// use actix_web::App;
     /// use actix_web::middleware::identity::IdentityService;
     /// use actix_web_sql_identity::SqlIdentityBuilder;
-    /// 
+    ///
     /// // Create the identity policy
     /// let policy = SqlIdentityBuilder::new("postgres://user:pass@host/database")
     ///                 .pool_size(5)
@@ -363,7 +361,6 @@ impl SqlIdentityBuilder {
     }
 
     fn variant(uri: &str) -> Variant {
-
         if uri.starts_with("mysql://") {
             return Variant::Mysql;
         } else if uri.starts_with("postgres://") || uri.starts_with("postgresql://") {
@@ -374,8 +371,8 @@ impl SqlIdentityBuilder {
     }
 
     /// Change the response header when an identity is remembered
-    /// 
-    /// # Arguments 
+    ///
+    /// # Arguments
     ///
     /// * `hdr` - Response header name to use
     pub fn response_header(mut self, hdr: &'static str) -> SqlIdentityBuilder {
@@ -394,7 +391,7 @@ impl SqlIdentityBuilder {
     }
 
     /// Finish building this SQL identity policy.  This will attempt
-    /// to construct the a pool of connections to the database 
+    /// to construct the a pool of connections to the database
     /// specified.  The type of database is determined by the uri set.
     /// On success, a new SqlIdentityPolicy is returned, on failure
     /// an error is returned.
@@ -450,15 +447,22 @@ impl<S> IdentityPolicy<S> for SqlIdentityPolicy {
     /// * `req` - The HTTP request recieved
     fn from_request(&self, req: &mut HttpRequest<S>) -> Self::Future {
         let inner = Rc::clone(&self.0);
-        let ip = req.connection_info().remote().unwrap_or("0.0.0.0").to_owned();
+        let ip = req.connection_info()
+            .remote()
+            .unwrap_or("0.0.0.0")
+            .to_owned();
         let unk = HeaderValue::from_static("Unknown");
-        let ua = req.headers().get("user-agent").unwrap_or(&unk).to_str().unwrap_or("Unknown").to_owned();
+        let ua = req.headers()
+            .get("user-agent")
+            .unwrap_or(&unk)
+            .to_str()
+            .unwrap_or("Unknown")
+            .to_owned();
 
         Box::new(self.0.load(req).map(move |ident| {
             if let Some(id) = ident {
-
                 let (_state, uip) = match id.ip {
-                    Some(ref nip) if &ip == nip  => (SqlIdentityState::Unchanged, nip.clone()),
+                    Some(ref nip) if &ip == nip => (SqlIdentityState::Unchanged, nip.clone()),
                     _ => (SqlIdentityState::Changed, ip),
                 };
 

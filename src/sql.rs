@@ -5,8 +5,8 @@ use actix::prelude::{Actor, Handler, Message, Syn};
 use actix::sync::{SyncArbiter, SyncContext};
 use actix::Addr;
 
-use chrono::NaiveDateTime;
 use chrono::prelude::Utc;
+use chrono::NaiveDateTime;
 
 // Diesel (SQL ORM) Imports
 use diesel::r2d2::{ConnectionManager, Pool};
@@ -82,8 +82,7 @@ impl SqlActor {
         #[cfg(feature = "sqlite")]
         {
             let manager = ConnectionManager::<SqliteConnection>::new(s);
-            let pool = Pool::builder()
-                .build(manager)?;
+            let pool = Pool::builder().build(manager)?;
 
             let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::SqlitePool(pool.clone())));
             Ok(addr)
@@ -108,8 +107,7 @@ impl SqlActor {
         #[cfg(feature = "mysql")]
         {
             let manager = ConnectionManager::<MysqlConnection>::new(s);
-            let pool = Pool::builder()
-                .build(manager)?;
+            let pool = Pool::builder().build(manager)?;
 
             let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::MySqlPool(pool.clone())));
             Ok(addr)
@@ -134,8 +132,7 @@ impl SqlActor {
         #[cfg(feature = "postgres")]
         {
             let manager = ConnectionManager::<PgConnection>::new(s);
-            let pool = Pool::builder()
-                .build(manager)?;
+            let pool = Pool::builder().build(manager)?;
 
             let addr = SyncArbiter::start(n, move || SqlActor(SqlPool::PgPool(pool.clone())));
             Ok(addr)
@@ -204,7 +201,7 @@ impl Handler<FindIdentity> for SqlActor {
             n => {
                 warn!("Too Many/Few results ({})", n);
                 Err(SqlIdentityError::TokenNotFound.into())
-            },
+            }
         }
     }
 }
@@ -227,8 +224,18 @@ impl UpdateIdentity {
 
         //self.identity.as_ref().map(|s| s.as_ref())
         UpdateIdentity {
-            token: ident.token.as_ref().map(|s| s.as_ref()).unwrap_or("").to_string(),
-            userid: ident.identity.as_ref().map(|s| s.as_ref()).unwrap_or("").to_string(),
+            token: ident
+                .token
+                .as_ref()
+                .map(|s| s.as_ref())
+                .unwrap_or("")
+                .to_string(),
+            userid: ident
+                .identity
+                .as_ref()
+                .map(|s| s.as_ref())
+                .unwrap_or("")
+                .to_string(),
             ip: ident.ip.clone(),
             useragent: ident.user_agent.clone(),
             created: ident.created,

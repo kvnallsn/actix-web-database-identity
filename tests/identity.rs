@@ -103,7 +103,11 @@ fn pg_invalid_token() {
 /// Token: Valid
 /// Expected Result: 200 OK
 fn valid_token(mut srv: TestServer) {
-    common::profile(&mut srv, Some("g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC"), StatusCode::OK);
+    common::profile(
+        &mut srv,
+        Some("g8mlRUwF1AKx7/ZRvReQ+dRhGpoDAzIC"),
+        StatusCode::OK,
+    );
 }
 
 // There are some problems with this test, most likely due to too many
@@ -172,9 +176,10 @@ fn login_logout(mut srv: TestServer) {
 #[cfg(feature = "sqlite")]
 fn sqlite_login_logout() {
     dotenv::from_filename("tests/test.env").ok();
-    let uri = format!("{}/{}",
-            dotenv::var("SQLITE_PATH").unwrap(),
-            dotenv::var("SQLITE_DB2").unwrap(),
+    let uri = format!(
+        "{}/{}",
+        dotenv::var("SQLITE_PATH").unwrap(),
+        dotenv::var("SQLITE_DB2").unwrap(),
     );
     let srv = common::build_test_server(uri);
     login_logout(srv);
@@ -234,9 +239,10 @@ fn multiple_logout(mut srv: TestServer) {
 #[cfg(feature = "sqlite")]
 fn sqlite_multiple_logout() {
     dotenv::from_filename("tests/test.env").ok();
-    let uri = format!("{}/{}",
-            dotenv::var("SQLITE_PATH").unwrap(),
-            dotenv::var("SQLITE_DB3").unwrap(),
+    let uri = format!(
+        "{}/{}",
+        dotenv::var("SQLITE_PATH").unwrap(),
+        dotenv::var("SQLITE_DB3").unwrap(),
     );
     let srv = common::build_test_server(uri);
     multiple_logout(srv);

@@ -89,7 +89,7 @@ fn logout(mut req: HttpRequest) -> impl Responder {
 fn main() {
     server::new(|| {
 		// Construct our policy, passing the address and any options
-        let policy = SqlIdentityBuilder::new("my.db")
+        let policy = SqlIdentityBuilder::new("sqlite://my.db")
             .pool_size(POOL_SIZE);
 
         App::new()
@@ -97,7 +97,7 @@ fn main() {
             .route("/profile", http::Method::GET, profile)
             .route("/logout", http::Method::POST, logout)
             .middleware(IdentityService::new(
-                    policy.sqlite()
+                    policy.finish()
                         .expect("failed to connect to database")))
     })
     .bind("127.0.0.1:7070").unwrap()

@@ -32,28 +32,25 @@ pub fn build_test_server_from_env(variant: SqlVariant) -> TestServer {
     dotenv::from_filename("tests/test.env").ok();
 
     let uri = match variant {
-        SqlVariant::Sqlite => {
-            format!("{}/{}",
-                    dotenv::var("SQLITE_PATH").unwrap(),
-                    dotenv::var("SQLITE_DB").unwrap(),
-            )
-        },
-        SqlVariant::MySql => {
-            format!("mysql://{}:{}@{}/{}",
-                    dotenv::var("MYSQL_USER").unwrap(),
-                    dotenv::var("MYSQL_PASS").unwrap(),
-                    dotenv::var("MYSQL_HOST").unwrap(),
-                    dotenv::var("MYSQL_DB").unwrap()
-            )
-        },
-        SqlVariant::Postgres => {
-            format!("postgres://{}:{}@{}/{}",
-                    dotenv::var("PG_USER").unwrap(),
-                    dotenv::var("PG_PASS").unwrap(),
-                    dotenv::var("PG_HOST").unwrap(),
-                    dotenv::var("PG_DB").unwrap()
-            )
-        }
+        SqlVariant::Sqlite => format!(
+            "{}/{}",
+            dotenv::var("SQLITE_PATH").unwrap(),
+            dotenv::var("SQLITE_DB").unwrap(),
+        ),
+        SqlVariant::MySql => format!(
+            "mysql://{}:{}@{}/{}",
+            dotenv::var("MYSQL_USER").unwrap(),
+            dotenv::var("MYSQL_PASS").unwrap(),
+            dotenv::var("MYSQL_HOST").unwrap(),
+            dotenv::var("MYSQL_DB").unwrap()
+        ),
+        SqlVariant::Postgres => format!(
+            "postgres://{}:{}@{}/{}",
+            dotenv::var("PG_USER").unwrap(),
+            dotenv::var("PG_PASS").unwrap(),
+            dotenv::var("PG_HOST").unwrap(),
+            dotenv::var("PG_DB").unwrap()
+        ),
     };
 
     build_test_server(uri)
@@ -70,15 +67,12 @@ pub fn build_test_server<S: Into<String>>(uri: S) -> TestServer {
     let uri = uri.into();
     println!("Connecting to: {}", uri);
 
-
     TestServer::new(move |app| {
         // Build SQL Identity policy
-        let policy = SqlIdentityBuilder::new(uri.clone())
-            .response_header(RESPONSE_HEADER);
+        let policy = SqlIdentityBuilder::new(uri.clone()).response_header(RESPONSE_HEADER);
 
         app.middleware(IdentityService::new(
-                policy.finish()
-                    .expect("failed to connect to database")
+            policy.finish().expect("failed to connect to database"),
         )).resource("/", |r| r.get().h(|_| HttpResponse::Ok()))
             .resource("/login", |r| {
                 r.post().h(|mut req: HttpRequest| {
@@ -136,10 +130,7 @@ pub fn check_response(srv: &mut TestServer, req: ClientRequest, exp: StatusCode)
 /// * `srv` - An instance of a TestServer
 /// * `username` - Username to login
 pub fn login(srv: &mut TestServer, _username: &str) -> Option<String> {
-    let request = srv.post()
-        .uri(srv.url("/login"))
-        .finish()
-        .unwrap();
+    let request = srv.post().uri(srv.url("/login")).finish().unwrap();
 
     println!("{:?}", request);
     let response = srv.execute(request.send()).unwrap();
