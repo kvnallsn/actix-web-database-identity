@@ -311,8 +311,10 @@ impl SqlIdentityInner {
 }
 
 /// Use a SQL database for request identity storage
+#[derive(Clone)]
 pub struct SqlIdentityPolicy(Rc<SqlIdentityInner>);
 
+#[derive(Clone)]
 pub struct SqlIdentityBuilder {
     pool: usize,
     uri: String,

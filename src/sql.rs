@@ -38,7 +38,7 @@ table! {
 }
 
 /// Describes what type of SQL connection to create
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Variant {
     Sqlite,
     Mysql,
