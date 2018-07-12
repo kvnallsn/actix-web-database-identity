@@ -1,6 +1,6 @@
-CREATE DATABASE twinscroll;
+CREATE DATABASE testdb;
 
-\c twinscroll
+\c testdb
 
 CREATE TABLE identities (
 	token TEXT PRIMARY KEY NOT NULL,
