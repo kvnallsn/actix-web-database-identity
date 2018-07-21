@@ -1,7 +1,7 @@
 //! SQL Actor
 
 // Actix Imports
-use actix::prelude::{Actor, Handler, Message, Syn};
+use actix::prelude::{Actor, Handler, Message};
 use actix::sync::{SyncArbiter, SyncContext};
 use actix::Addr;
 
@@ -78,7 +78,7 @@ impl SqlActor {
     ///
     /// * `n` - Number of threads
     /// * `s` - SQLite connection string
-    pub fn sqlite(n: usize, s: &str) -> Result<Addr<Syn, SqlActor>, Error> {
+    pub fn sqlite(n: usize, s: &str) -> Result<Addr<SqlActor>, Error> {
         #[cfg(feature = "sqlite")]
         {
             let manager = ConnectionManager::<SqliteConnection>::new(s);
@@ -103,7 +103,7 @@ impl SqlActor {
     ///
     /// * `n` - Number of threads
     /// * `s` - MySQL connection string
-    pub fn mysql(n: usize, s: &str) -> Result<Addr<Syn, SqlActor>, Error> {
+    pub fn mysql(n: usize, s: &str) -> Result<Addr<SqlActor>, Error> {
         #[cfg(feature = "mysql")]
         {
             let manager = ConnectionManager::<MysqlConnection>::new(s);
@@ -128,7 +128,7 @@ impl SqlActor {
     ///
     /// * `n` - Number of threads
     /// * `s` - PostgresSQL connection string
-    pub fn pg(n: usize, s: &str) -> Result<Addr<Syn, SqlActor>, Error> {
+    pub fn pg(n: usize, s: &str) -> Result<Addr<SqlActor>, Error> {
         #[cfg(feature = "postgres")]
         {
             let manager = ConnectionManager::<PgConnection>::new(s);

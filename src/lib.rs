@@ -75,7 +75,6 @@ use std::rc::Rc;
 
 use failure::Error;
 
-use actix::prelude::Syn;
 use actix::Addr;
 
 // Actix Web imports
@@ -193,7 +192,7 @@ impl Identity for SqlIdentity {
 
 /// Wrapped inner-provider for SQL storage
 struct SqlIdentityInner {
-    addr: Addr<Syn, SqlActor>,
+    addr: Addr<SqlActor>,
     hdr: &'static str,
 }
 
@@ -203,7 +202,7 @@ impl SqlIdentityInner {
     /// # Arguments
     ///
     /// * `addr` - A SQL connection, already opened
-    fn new(addr: Addr<Syn, SqlActor>, hdr: &'static str) -> SqlIdentityInner {
+    fn new(addr: Addr<SqlActor>, hdr: &'static str) -> SqlIdentityInner {
         SqlIdentityInner { addr, hdr }
     }
 
@@ -447,7 +446,7 @@ impl<S> IdentityPolicy<S> for SqlIdentityPolicy {
     /// # Arguments
     ///
     /// * `req` - The HTTP request recieved
-    fn from_request(&self, req: &mut HttpRequest<S>) -> Self::Future {
+    fn from_request(&self, req: &HttpRequest<S>) -> Self::Future {
         let inner = Rc::clone(&self.0);
         let ip = req.connection_info()
             .remote()

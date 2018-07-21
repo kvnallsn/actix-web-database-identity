@@ -1,6 +1,6 @@
 [package]
 name = "actix-web-sql-identity"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["Kevin Allison <kvnallsn@gmail.com>"]
 description = "A SQL-backend identity provider for Actix Web's identity system"
 documentation = "https://docs.rs/crate/actix-web-sql-identity"
@@ -15,8 +15,8 @@ exclude = ["tests/*.sqlite3", "doc/**/*.html"]
 travis-ci = { repository = "kvnallsn/actix-web-database-identity", branch = "master" }
 
 [dependencies]
-actix = "0.5"
-actix-web = "0.6"
+actix = "0.7"
+actix-web = "0.7"
 base64 = "0.9"
 chrono = "0.4.4"
 failure = "0.1"

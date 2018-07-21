@@ -73,21 +73,21 @@ pub fn build_test_server<S: Into<String>>(uri: S) -> TestServer {
 
         app.middleware(IdentityService::new(
             policy.finish().expect("failed to connect to database"),
-        )).resource("/", |r| r.get().h(|_| HttpResponse::Ok()))
+        )).resource("/", |r| r.get().f(|_| HttpResponse::Ok()))
             .resource("/login", |r| {
-                r.post().h(|mut req: HttpRequest| {
+                r.post().f(|req: &HttpRequest| {
                     req.remember("mike".to_string());
                     HttpResponse::Ok()
                 })
             })
             .resource("/profile", |r| {
-                r.get().h(|req: HttpRequest| match req.identity() {
+                r.get().f(|req: &HttpRequest| match req.identity() {
                     Some(_) => HttpResponse::Ok(),
                     None => HttpResponse::Unauthorized(),
                 })
             })
             .resource("/logout", |r| {
-                r.post().h(|mut req: HttpRequest| {
+                r.post().f(|req: &HttpRequest| {
                     req.forget();
                     HttpResponse::Ok()
                 })
