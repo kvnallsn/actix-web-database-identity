@@ -1,6 +1,14 @@
-Version 0.3.1 (XX July 2018
+Version 0.4.1 (21 July 2018)
 ======
-Added `Clone` trait on `Sql::Variant` and `SqlIdentityBuilder`
+* Added `id` field to the identities database table
+
+Version 0.4.0 (21 July 2018)
+======
+* Updated to Actix-Web 0.7.1, Actix 0.7.1
+
+Version 0.3.1 (12 July 2018)
+======
+* Added `Clone` trait on `Sql::Variant` and `SqlIdentityBuilder`
 
 Version 0.3.0 (05 July 2018)
 ======
