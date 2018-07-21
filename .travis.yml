@@ -24,7 +24,7 @@ env:
         - MYSQL_DB=twinscroll
         - PG_USER=postgres
         - PG_HOST=localhost
-        - PG_DB=twinscroll
+        - PG_DB=testdb
 
 services:
     - mysql
