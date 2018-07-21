@@ -24,10 +24,11 @@ use diesel::pg::PgConnection;
 // Failure (error management system) Imports
 use failure::Error;
 
-use super::{SqlIdentity, SqlIdentityError};
+use super::SqlIdentity;
 
 table! {
     identities (token) {
+        id -> Int8,
         token -> Text,
         userid -> Text,
         ip -> Nullable<Text>,
@@ -47,6 +48,7 @@ pub enum Variant {
 
 #[derive(Debug, Queryable)]
 pub struct SqlIdentityModel {
+    pub id: i64,
     pub token: String,
     pub userid: String,
     pub ip: Option<String>,
@@ -167,47 +169,32 @@ impl Handler<FindIdentity> for SqlActor {
     fn handle(&mut self, msg: FindIdentity, _: &mut Self::Context) -> Self::Result {
         use self::identities::dsl::*;
 
-        let mut results = match self.0 {
+        let session = match self.0 {
             #[cfg(feature = "sqlite")]
             SqlPool::SqlitePool(ref p) => {
                 let conn: &SqliteConnection = &(*(p.get()?));
-                identities
-                    .filter(token.eq(msg.token))
-                    .limit(1)
-                    .load::<SqlIdentityModel>(conn)?
+                identities.filter(token.eq(msg.token)).first(conn)?
             }
 
             #[cfg(feature = "mysql")]
             SqlPool::MySqlPool(ref p) => {
                 let conn: &MysqlConnection = &(*(p.get()?));
-                identities
-                    .filter(token.eq(msg.token))
-                    .limit(1)
-                    .load::<SqlIdentityModel>(conn)?
+                identities.filter(token.eq(msg.token)).first(conn)?
             }
 
             #[cfg(feature = "postgres")]
             SqlPool::PgPool(ref p) => {
                 let conn: &PgConnection = &(*(p.get()?));
-                identities
-                    .filter(token.eq(msg.token))
-                    .limit(1)
-                    .load::<SqlIdentityModel>(conn)?
+                identities.filter(token.eq(msg.token)).first(conn)?
             }
         };
 
-        match results.len() {
-            1 => Ok(results.remove(0)),
-            n => {
-                warn!("Too Many/Few results ({})", n);
-                Err(SqlIdentityError::TokenNotFound.into())
-            }
-        }
+        Ok(session)
     }
 }
 
 /// Inserts or Updates an Identity
-#[derive(Debug, Insertable)]
+#[derive(Debug, Insertable, AsChangeset)]
 #[table_name = "identities"]
 pub struct UpdateIdentity {
     pub token: String,
@@ -222,7 +209,6 @@ impl UpdateIdentity {
     pub fn new(ident: &SqlIdentity) -> UpdateIdentity {
         let now = Utc::now();
 
-        //self.identity.as_ref().map(|s| s.as_ref())
         UpdateIdentity {
             token: ident
                 .token
@@ -278,7 +264,7 @@ impl Handler<UpdateIdentity> for SqlActor {
                     .values(&msg)
                     .on_conflict(token)
                     .do_update()
-                    .set(userid.eq(msg.userid.clone()))
+                    .set(&msg)
                     .execute(conn)?;
 
                 Ok(n)

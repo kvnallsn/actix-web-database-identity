@@ -3,7 +3,8 @@ CREATE DATABASE testdb;
 \c testdb
 
 CREATE TABLE identities (
-	token TEXT PRIMARY KEY NOT NULL,
+	id BIGSERIAL PRIMARY KEY NOT NULL,
+	token TEXT UNIQUE NOT NULL,
 	userid TEXT NOT NULL,
 	ip TEXT,
 	useragent TEXT,

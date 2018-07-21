@@ -9,7 +9,7 @@ help:
 	@echo "Targets\n-------"
 	@echo "help:           Display this message"
 	@echo "all:            Initialize sqlite, postgres and mysql databases"
-	@echo "clean:          Deletes/drops sqlite, postgres and mysql databases and tabeles"
+	@echo "clean:          Deletes/drops sqlite, postgres and mysql databases and tables"
 	@echo "reset:          clean, followed by all"
 	@echo ""
 	@echo "sqlite:         Initialize sqlite database"
