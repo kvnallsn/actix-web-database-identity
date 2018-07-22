@@ -115,13 +115,15 @@ enum SqlIdentityError {
 }
 
 enum SqlIdentityState {
-    Changed,
+    Created,
+    Updated,
     Deleted,
     Unchanged,
 }
 
 /// Identity that uses a SQL database as identity storage
 pub struct SqlIdentity {
+    id: i64,
     state: SqlIdentityState,
     identity: Option<String>,
     token: Option<String>,
@@ -150,7 +152,7 @@ impl Identity for SqlIdentity {
         rand::thread_rng().fill(&mut arr[..]);
         self.token = Some(base64::encode(&arr));
 
-        self.state = SqlIdentityState::Changed;
+        self.state = SqlIdentityState::Created;
     }
 
     /// Forgets a user, by deleting the identity
@@ -166,7 +168,12 @@ impl Identity for SqlIdentity {
     /// * `resp` - HTTP response to modify
     fn write(&mut self, resp: HttpResponse) -> Result<MiddlewareResponse, ActixWebError> {
         match self.state {
-            SqlIdentityState::Changed if self.token.is_some() && self.identity.is_some() => {
+            SqlIdentityState::Created => {
+                self.state = SqlIdentityState::Unchanged;
+                Ok(MiddlewareResponse::Future(self.inner.create(self, resp)))
+            },
+
+            SqlIdentityState::Updated if self.token.is_some() && self.identity.is_some() => {
                 self.state = SqlIdentityState::Unchanged;
                 Ok(MiddlewareResponse::Future(self.inner.save(self, resp)))
             }
@@ -177,7 +184,7 @@ impl Identity for SqlIdentity {
                 Ok(MiddlewareResponse::Future(self.inner.remove(token, resp)))
             }
 
-            SqlIdentityState::Deleted | SqlIdentityState::Changed => {
+            SqlIdentityState::Deleted | SqlIdentityState::Updated => {
                 // Not logged in/log in failed
                 Err(error::ErrorBadRequest(SqlIdentityError::TokenRequired))
             }
@@ -206,14 +213,8 @@ impl SqlIdentityInner {
         SqlIdentityInner { addr, hdr }
     }
 
-    /// Saves an identity to the backend provider (SQL database)
-    fn save(
-        &self,
-        identity: &SqlIdentity,
-        mut resp: HttpResponse,
-    ) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
+    fn create(&self, identity: &SqlIdentity, mut resp: HttpResponse) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
         if let Some(ref token) = identity.token {
-            // Add the new token/identity to response headers
             let headers = resp.headers_mut();
 
             if let Ok(token) = token.parse() {
@@ -233,7 +234,28 @@ impl SqlIdentityInner {
 
         Box::new(
             self.addr
-                .send(UpdateIdentity::new(identity))
+                .send(UpdateIdentity::create(identity))
+                .map_err(ActixWebError::from)
+                .and_then(move |res| match res {
+                    Ok(_) => Ok(resp),
+                    Err(e) => {
+                        error!("ERROR: {:?}", e);
+                        Err(error::ErrorInternalServerError(e))
+                    }
+                }),
+        )
+    }
+
+    /// Saves an identity to the backend provider (SQL database)
+    fn save(
+        &self,
+        identity: &SqlIdentity,
+        resp: HttpResponse,
+    ) -> Box<Future<Item = HttpResponse, Error = ActixWebError>> {
+
+        Box::new(
+            self.addr
+                .send(UpdateIdentity::update(identity))
                 .map_err(ActixWebError::from)
                 .and_then(move |res| match res {
                     Ok(_) => Ok(resp),
@@ -462,25 +484,27 @@ impl<S> IdentityPolicy<S> for SqlIdentityPolicy {
 
         Box::new(self.0.load(req).map(move |ident| {
             if let Some(id) = ident {
-                let (_state, uip) = match id.ip {
-                    Some(ref nip) if &ip == nip => (SqlIdentityState::Unchanged, nip.clone()),
-                    _ => (SqlIdentityState::Changed, ip),
+                let uip = match id.ip {
+                    Some(ref nip) if &ip == nip => nip.clone(),
+                    _ =>  ip,
                 };
 
                 SqlIdentity {
+                    id: id.id,
                     identity: Some(id.userid),
                     token: Some(id.token),
                     ip: Some(uip),
                     user_agent: Some(ua),
                     created: id.created,
-                    state: SqlIdentityState::Changed,
+                    state: SqlIdentityState::Updated,
                     inner: inner,
                 }
             } else {
                 SqlIdentity {
+                    id: -1,
                     identity: None,
                     token: None,
-                    ip: None,
+                    ip: Some(ip),
                     user_agent: Some(ua),
                     created: Utc::now().naive_utc(),
                     state: SqlIdentityState::Unchanged,

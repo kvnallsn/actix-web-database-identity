@@ -1,3 +1,8 @@
+Version 0.4.2 (22 July 2018)
+======
+* Improved request handling
+* Updated README to reflect proper table structure
+
 Version 0.4.1 (21 July 2018)
 ======
 * Added `id` field to the identities database table

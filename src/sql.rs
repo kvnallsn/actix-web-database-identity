@@ -27,7 +27,7 @@ use failure::Error;
 use super::SqlIdentity;
 
 table! {
-    identities (token) {
+    identities (id) {
         id -> Int8,
         token -> Text,
         userid -> Text,
@@ -194,9 +194,18 @@ impl Handler<FindIdentity> for SqlActor {
 }
 
 /// Inserts or Updates an Identity
-#[derive(Debug, Insertable, AsChangeset)]
+#[derive(Debug, AsChangeset)]
 #[table_name = "identities"]
 pub struct UpdateIdentity {
+    pub id: i64,
+    pub ip: Option<String>,
+    pub useragent: Option<String>,
+    pub modified: NaiveDateTime,
+}
+
+#[derive(Debug, Insertable)]
+#[table_name = "identities"]
+pub struct CreateIdentity {
     pub token: String,
     pub userid: String,
     pub ip: Option<String>,
@@ -206,10 +215,21 @@ pub struct UpdateIdentity {
 }
 
 impl UpdateIdentity {
-    pub fn new(ident: &SqlIdentity) -> UpdateIdentity {
+    pub fn update(ident: &SqlIdentity) -> UpdateIdentity {
         let now = Utc::now();
 
         UpdateIdentity {
+            id: ident.id,
+            ip: ident.ip.clone(),
+            useragent: ident.user_agent.clone(),
+            modified: now.naive_utc(),
+        }
+    }
+
+    pub fn create(ident: &SqlIdentity) -> CreateIdentity {
+        let now = Utc::now();
+
+        CreateIdentity {
             token: ident
                 .token
                 .as_ref()
@@ -230,6 +250,44 @@ impl UpdateIdentity {
     }
 }
 
+impl Message for CreateIdentity {
+    type Result = Result<usize, Error>;
+}
+
+impl Handler<CreateIdentity> for SqlActor {
+    type Result = Result<usize, Error>;
+
+    fn handle(&mut self, msg: CreateIdentity, _: &mut Self::Context) -> Self::Result {
+        use self::identities::dsl::*;
+
+        match self.0 {
+            #[cfg(feature = "sqlite")]
+            SqlPool::SqlitePool(ref p) => {
+                let conn: &SqliteConnection = &(*(p.get()?));
+                let n = diesel::insert_into(identities).values(&msg).execute(conn)?;
+
+                Ok(n)
+            }
+
+            #[cfg(feature = "mysql")]
+            SqlPool::MySqlPool(ref p) => {
+                let conn: &MysqlConnection = &(*(p.get()?));
+                let n = diesel::insert_into(identities).values(&msg).execute(conn)?;
+
+                Ok(n)
+            }
+
+            #[cfg(feature = "postgres")]
+            SqlPool::PgPool(ref p) => {
+                let conn: &PgConnection = &(*(p.get()?));
+                let n = diesel::insert_into(identities).values(&msg).execute(conn)?;
+
+                Ok(n)
+            }
+        }
+    }
+}
+
 impl Message for UpdateIdentity {
     type Result = Result<usize, Error>;
 }
@@ -244,7 +302,10 @@ impl Handler<UpdateIdentity> for SqlActor {
             #[cfg(feature = "sqlite")]
             SqlPool::SqlitePool(ref p) => {
                 let conn: &SqliteConnection = &(*(p.get()?));
-                let n = diesel::replace_into(identities).values(&msg).execute(conn)?;
+                //let n = diesel::replace_into(identities).values(&msg).execute(conn)?;
+                let n = diesel::update(identities.find(msg.id))
+                    .set(&msg)
+                    .execute(conn)?;
 
                 Ok(n)
             }
@@ -252,7 +313,10 @@ impl Handler<UpdateIdentity> for SqlActor {
             #[cfg(feature = "mysql")]
             SqlPool::MySqlPool(ref p) => {
                 let conn: &MysqlConnection = &(*(p.get()?));
-                let n = diesel::replace_into(identities).values(&msg).execute(conn)?;
+                //let n = diesel::replace_into(identities).values(&msg).execute(conn)?;
+                let n = diesel::update(identities.find(msg.id))
+                    .set(&msg)
+                    .execute(conn)?;
 
                 Ok(n)
             }
@@ -260,12 +324,15 @@ impl Handler<UpdateIdentity> for SqlActor {
             #[cfg(feature = "postgres")]
             SqlPool::PgPool(ref p) => {
                 let conn: &PgConnection = &(*(p.get()?));
-                let n = diesel::insert_into(identities)
-                    .values(&msg)
-                    .on_conflict(token)
-                    .do_update()
+                let n = diesel::update(identities.find(msg.id))
                     .set(&msg)
                     .execute(conn)?;
+                //let n = diesel::insert_into(identities)
+                //.values(&msg)
+                //.on_conflict(token)
+                //.do_update()
+                //.set(&msg)
+                //.execute(conn)?;
 
                 Ok(n)
             }

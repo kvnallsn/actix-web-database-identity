@@ -46,7 +46,8 @@ This crate requires a table named *identities* with the following fields:
 
 | Field     | Type      | Constraints                   | Description                                                 |
 | --------- | --------- | ----------------------------- | ----------------------------------------------------------- |
-| token     | CHAR(32)  | PRIMARY KEY, NOT NULL, UNIQUE | The auto-generated token field, will be used to lookup user |
+| id        | BIGINT    | PRIMARY KEY, AUTO INCREMENT   | A unique id that is not the token, for revoking sessions    |
+| token     | CHAR(32)  | NOT NULL, UNIQUE              | The auto-generated token field, will be used to lookup user |
 | userid    | TEXT      | NOT NULL                      | The user id to remember, probably a key in another table    |
 | ip        | TEXT      |                               | The IP the user most recently connected from                |
 | useragent | TEXT      |                               | The user-agent of the most recent connection                |
