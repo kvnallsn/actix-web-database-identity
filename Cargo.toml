@@ -9,7 +9,7 @@ readme = "README.md"
 keywords = ["identity", "actix", "database", "sql", "postgres"]
 categories = ["web-programming", "database", "authentication"]
 license = "BSD-3-Clause"
-exclude = ["tests/*.sqlite3", "doc/**/*.html"]
+exclude = ["tests/*.sqlite3", "doc/**/*.html", "docs/*"]
 
 [badges]
 travis-ci = { repository = "kvnallsn/actix-web-database-identity", branch = "master" }
