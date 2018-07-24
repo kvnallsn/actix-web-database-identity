@@ -1,9 +1,0 @@
-CREATE TABLE identities (
-	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-	token TEXT UNIQUE NOT NULL,
-	userid TEXT NOT NULL,
-	ip TEXT,
-	useragent TEXT,
-	created DATETIME NOT NULL,
-	modified DATETIME NOT NULL
-);

@@ -1,0 +1,182 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `st_net` struct in crate `mysqlclient_sys`."><meta name="keywords" content="rust, rustlang, rust-lang, st_net"><title>mysqlclient_sys::st_net - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../dark.css"><link rel="stylesheet" type="text/css" href="../light.css" id="themeStyle"><script src="../storage.js"></script></head><body class="rustdoc struct"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><p class='location'>Struct st_net</p><div class="sidebar-elems"><div class="block items"><a class="sidebar-title" href="#fields">Fields</a><div class="sidebar-links"><a href="#structfield.vio">vio</a><a href="#structfield.buff">buff</a><a href="#structfield.buff_end">buff_end</a><a href="#structfield.write_pos">write_pos</a><a href="#structfield.read_pos">read_pos</a><a href="#structfield.fd">fd</a><a href="#structfield.remain_in_buf">remain_in_buf</a><a href="#structfield.length">length</a><a href="#structfield.buf_length">buf_length</a><a href="#structfield.where_b">where_b</a><a href="#structfield.max_packet">max_packet</a><a href="#structfield.max_packet_size">max_packet_size</a><a href="#structfield.pkt_nr">pkt_nr</a><a href="#structfield.compress_pkt_nr">compress_pkt_nr</a><a href="#structfield.write_timeout">write_timeout</a><a href="#structfield.read_timeout">read_timeout</a><a href="#structfield.retry_count">retry_count</a><a href="#structfield.fcntl">fcntl</a><a href="#structfield.return_status">return_status</a><a href="#structfield.reading_or_writing">reading_or_writing</a><a href="#structfield.save_char">save_char</a><a href="#structfield.unused1">unused1</a><a href="#structfield.unused2">unused2</a><a href="#structfield.compress">compress</a><a href="#structfield.unused3">unused3</a><a href="#structfield.unused">unused</a><a href="#structfield.last_errno">last_errno</a><a href="#structfield.error">error</a><a href="#structfield.unused4">unused4</a><a href="#structfield.unused5">unused5</a><a href="#structfield.last_error">last_error</a><a href="#structfield.sqlstate">sqlstate</a><a href="#structfield.extension">extension</a></div><a class="sidebar-title" href="#synthetic-implementations">Auto Trait Implementations</a><div class="sidebar-links"><a href="#impl-Send">!Send</a><a href="#impl-Sync">!Sync</a></div></div><p class='location'><a href='index.html'>mysqlclient_sys</a></p><script>window.sidebarCurrent = {name: 'st_net', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><input class="search-input" name="search" autocomplete="off" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><a id="settings-menu" href="../settings.html"><img src="../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>mysqlclient_sys</a>::<wbr><a class="struct" href=''>st_net</a></span><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../src/mysqlclient_sys/bindings_macos.rs.html#103-147' title='goto source code'>[src]</a></span></h1><div class="docblock type-decl"><pre class='rust struct'><div class="docblock attributes">#[repr(C)]
+</div>pub struct st_net {
+    pub vio: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="../mysqlclient_sys/type.Vio.html" title="type mysqlclient_sys::Vio">Vio</a>,
+    pub buff: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a>,
+    pub buff_end: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a>,
+    pub write_pos: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a>,
+    pub read_pos: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a>,
+    pub fd: <a class="type" href="../mysqlclient_sys/type.my_socket.html" title="type mysqlclient_sys::my_socket">my_socket</a>,
+    pub remain_in_buf: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_ulong.html" title="type std::os::raw::c_ulong">c_ulong</a>,
+    pub length: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_ulong.html" title="type std::os::raw::c_ulong">c_ulong</a>,
+    pub buf_length: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_ulong.html" title="type std::os::raw::c_ulong">c_ulong</a>,
+    pub where_b: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_ulong.html" title="type std::os::raw::c_ulong">c_ulong</a>,
+    pub max_packet: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_ulong.html" title="type std::os::raw::c_ulong">c_ulong</a>,
+    pub max_packet_size: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_ulong.html" title="type std::os::raw::c_ulong">c_ulong</a>,
+    pub pkt_nr: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a>,
+    pub compress_pkt_nr: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a>,
+    pub write_timeout: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a>,
+    pub read_timeout: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a>,
+    pub retry_count: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a>,
+    pub fcntl: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_int.html" title="type std::os::raw::c_int">c_int</a>,
+    pub return_status: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a>,
+    pub reading_or_writing: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a>,
+    pub save_char: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_char.html" title="type std::os::raw::c_char">c_char</a>,
+    pub unused1: <a class="type" href="../mysqlclient_sys/type.my_bool.html" title="type mysqlclient_sys::my_bool">my_bool</a>,
+    pub unused2: <a class="type" href="../mysqlclient_sys/type.my_bool.html" title="type mysqlclient_sys::my_bool">my_bool</a>,
+    pub compress: <a class="type" href="../mysqlclient_sys/type.my_bool.html" title="type mysqlclient_sys::my_bool">my_bool</a>,
+    pub unused3: <a class="type" href="../mysqlclient_sys/type.my_bool.html" title="type mysqlclient_sys::my_bool">my_bool</a>,
+    pub unused: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a>,
+    pub last_errno: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a>,
+    pub error: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a>,
+    pub unused4: <a class="type" href="../mysqlclient_sys/type.my_bool.html" title="type mysqlclient_sys::my_bool">my_bool</a>,
+    pub unused5: <a class="type" href="../mysqlclient_sys/type.my_bool.html" title="type mysqlclient_sys::my_bool">my_bool</a>,
+    pub last_error: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">[</a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_char.html" title="type std::os::raw::c_char">c_char</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">; 512]</a>,
+    pub sqlstate: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">[</a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_char.html" title="type std::os::raw::c_char">c_char</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">; 6]</a>,
+    pub extension: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="enum" href="https://doc.rust-lang.org/nightly/std/os/raw/enum.c_void.html" title="enum std::os::raw::c_void">c_void</a>,
+}</pre></div><h2 id='fields' class='fields small-section-header'>
+                       Fields<a href='#fields' class='anchor'></a></h2><span id="structfield.vio" class="structfield small-section-header">
+                           <a href="#structfield.vio" class="anchor field"></a>
+                           <span id="vio.v" class='invisible'>
+                           <code>vio: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="../mysqlclient_sys/type.Vio.html" title="type mysqlclient_sys::Vio">Vio</a></code>
+                           </span></span><span id="structfield.buff" class="structfield small-section-header">
+                           <a href="#structfield.buff" class="anchor field"></a>
+                           <span id="buff.v" class='invisible'>
+                           <code>buff: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a></code>
+                           </span></span><span id="structfield.buff_end" class="structfield small-section-header">
+                           <a href="#structfield.buff_end" class="anchor field"></a>
+                           <span id="buff_end.v" class='invisible'>
+                           <code>buff_end: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a></code>
+                           </span></span><span id="structfield.write_pos" class="structfield small-section-header">
+                           <a href="#structfield.write_pos" class="anchor field"></a>
+                           <span id="write_pos.v" class='invisible'>
+                           <code>write_pos: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a></code>
+                           </span></span><span id="structfield.read_pos" class="structfield small-section-header">
+                           <a href="#structfield.read_pos" class="anchor field"></a>
+                           <span id="read_pos.v" class='invisible'>
+                           <code>read_pos: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a></code>
+                           </span></span><span id="structfield.fd" class="structfield small-section-header">
+                           <a href="#structfield.fd" class="anchor field"></a>
+                           <span id="fd.v" class='invisible'>
+                           <code>fd: <a class="type" href="../mysqlclient_sys/type.my_socket.html" title="type mysqlclient_sys::my_socket">my_socket</a></code>
+                           </span></span><span id="structfield.remain_in_buf" class="structfield small-section-header">
+                           <a href="#structfield.remain_in_buf" class="anchor field"></a>
+                           <span id="remain_in_buf.v" class='invisible'>
+                           <code>remain_in_buf: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_ulong.html" title="type std::os::raw::c_ulong">c_ulong</a></code>
+                           </span></span><span id="structfield.length" class="structfield small-section-header">
+                           <a href="#structfield.length" class="anchor field"></a>
+                           <span id="length.v" class='invisible'>
+                           <code>length: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_ulong.html" title="type std::os::raw::c_ulong">c_ulong</a></code>
+                           </span></span><span id="structfield.buf_length" class="structfield small-section-header">
+                           <a href="#structfield.buf_length" class="anchor field"></a>
+                           <span id="buf_length.v" class='invisible'>
+                           <code>buf_length: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_ulong.html" title="type std::os::raw::c_ulong">c_ulong</a></code>
+                           </span></span><span id="structfield.where_b" class="structfield small-section-header">
+                           <a href="#structfield.where_b" class="anchor field"></a>
+                           <span id="where_b.v" class='invisible'>
+                           <code>where_b: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_ulong.html" title="type std::os::raw::c_ulong">c_ulong</a></code>
+                           </span></span><span id="structfield.max_packet" class="structfield small-section-header">
+                           <a href="#structfield.max_packet" class="anchor field"></a>
+                           <span id="max_packet.v" class='invisible'>
+                           <code>max_packet: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_ulong.html" title="type std::os::raw::c_ulong">c_ulong</a></code>
+                           </span></span><span id="structfield.max_packet_size" class="structfield small-section-header">
+                           <a href="#structfield.max_packet_size" class="anchor field"></a>
+                           <span id="max_packet_size.v" class='invisible'>
+                           <code>max_packet_size: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_ulong.html" title="type std::os::raw::c_ulong">c_ulong</a></code>
+                           </span></span><span id="structfield.pkt_nr" class="structfield small-section-header">
+                           <a href="#structfield.pkt_nr" class="anchor field"></a>
+                           <span id="pkt_nr.v" class='invisible'>
+                           <code>pkt_nr: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a></code>
+                           </span></span><span id="structfield.compress_pkt_nr" class="structfield small-section-header">
+                           <a href="#structfield.compress_pkt_nr" class="anchor field"></a>
+                           <span id="compress_pkt_nr.v" class='invisible'>
+                           <code>compress_pkt_nr: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a></code>
+                           </span></span><span id="structfield.write_timeout" class="structfield small-section-header">
+                           <a href="#structfield.write_timeout" class="anchor field"></a>
+                           <span id="write_timeout.v" class='invisible'>
+                           <code>write_timeout: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a></code>
+                           </span></span><span id="structfield.read_timeout" class="structfield small-section-header">
+                           <a href="#structfield.read_timeout" class="anchor field"></a>
+                           <span id="read_timeout.v" class='invisible'>
+                           <code>read_timeout: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a></code>
+                           </span></span><span id="structfield.retry_count" class="structfield small-section-header">
+                           <a href="#structfield.retry_count" class="anchor field"></a>
+                           <span id="retry_count.v" class='invisible'>
+                           <code>retry_count: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a></code>
+                           </span></span><span id="structfield.fcntl" class="structfield small-section-header">
+                           <a href="#structfield.fcntl" class="anchor field"></a>
+                           <span id="fcntl.v" class='invisible'>
+                           <code>fcntl: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_int.html" title="type std::os::raw::c_int">c_int</a></code>
+                           </span></span><span id="structfield.return_status" class="structfield small-section-header">
+                           <a href="#structfield.return_status" class="anchor field"></a>
+                           <span id="return_status.v" class='invisible'>
+                           <code>return_status: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a></code>
+                           </span></span><span id="structfield.reading_or_writing" class="structfield small-section-header">
+                           <a href="#structfield.reading_or_writing" class="anchor field"></a>
+                           <span id="reading_or_writing.v" class='invisible'>
+                           <code>reading_or_writing: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a></code>
+                           </span></span><span id="structfield.save_char" class="structfield small-section-header">
+                           <a href="#structfield.save_char" class="anchor field"></a>
+                           <span id="save_char.v" class='invisible'>
+                           <code>save_char: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_char.html" title="type std::os::raw::c_char">c_char</a></code>
+                           </span></span><span id="structfield.unused1" class="structfield small-section-header">
+                           <a href="#structfield.unused1" class="anchor field"></a>
+                           <span id="unused1.v" class='invisible'>
+                           <code>unused1: <a class="type" href="../mysqlclient_sys/type.my_bool.html" title="type mysqlclient_sys::my_bool">my_bool</a></code>
+                           </span></span><span id="structfield.unused2" class="structfield small-section-header">
+                           <a href="#structfield.unused2" class="anchor field"></a>
+                           <span id="unused2.v" class='invisible'>
+                           <code>unused2: <a class="type" href="../mysqlclient_sys/type.my_bool.html" title="type mysqlclient_sys::my_bool">my_bool</a></code>
+                           </span></span><span id="structfield.compress" class="structfield small-section-header">
+                           <a href="#structfield.compress" class="anchor field"></a>
+                           <span id="compress.v" class='invisible'>
+                           <code>compress: <a class="type" href="../mysqlclient_sys/type.my_bool.html" title="type mysqlclient_sys::my_bool">my_bool</a></code>
+                           </span></span><span id="structfield.unused3" class="structfield small-section-header">
+                           <a href="#structfield.unused3" class="anchor field"></a>
+                           <span id="unused3.v" class='invisible'>
+                           <code>unused3: <a class="type" href="../mysqlclient_sys/type.my_bool.html" title="type mysqlclient_sys::my_bool">my_bool</a></code>
+                           </span></span><span id="structfield.unused" class="structfield small-section-header">
+                           <a href="#structfield.unused" class="anchor field"></a>
+                           <span id="unused.v" class='invisible'>
+                           <code>unused: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a></code>
+                           </span></span><span id="structfield.last_errno" class="structfield small-section-header">
+                           <a href="#structfield.last_errno" class="anchor field"></a>
+                           <span id="last_errno.v" class='invisible'>
+                           <code>last_errno: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uint.html" title="type std::os::raw::c_uint">c_uint</a></code>
+                           </span></span><span id="structfield.error" class="structfield small-section-header">
+                           <a href="#structfield.error" class="anchor field"></a>
+                           <span id="error.v" class='invisible'>
+                           <code>error: <a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_uchar.html" title="type std::os::raw::c_uchar">c_uchar</a></code>
+                           </span></span><span id="structfield.unused4" class="structfield small-section-header">
+                           <a href="#structfield.unused4" class="anchor field"></a>
+                           <span id="unused4.v" class='invisible'>
+                           <code>unused4: <a class="type" href="../mysqlclient_sys/type.my_bool.html" title="type mysqlclient_sys::my_bool">my_bool</a></code>
+                           </span></span><span id="structfield.unused5" class="structfield small-section-header">
+                           <a href="#structfield.unused5" class="anchor field"></a>
+                           <span id="unused5.v" class='invisible'>
+                           <code>unused5: <a class="type" href="../mysqlclient_sys/type.my_bool.html" title="type mysqlclient_sys::my_bool">my_bool</a></code>
+                           </span></span><span id="structfield.last_error" class="structfield small-section-header">
+                           <a href="#structfield.last_error" class="anchor field"></a>
+                           <span id="last_error.v" class='invisible'>
+                           <code>last_error: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">[</a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_char.html" title="type std::os::raw::c_char">c_char</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">; 512]</a></code>
+                           </span></span><div class='docblock'><p>Client library error message buffer. Actually belongs to struct MYSQL. </p>
+</div><span id="structfield.sqlstate" class="structfield small-section-header">
+                           <a href="#structfield.sqlstate" class="anchor field"></a>
+                           <span id="sqlstate.v" class='invisible'>
+                           <code>sqlstate: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">[</a><a class="type" href="https://doc.rust-lang.org/nightly/std/os/raw/type.c_char.html" title="type std::os::raw::c_char">c_char</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">; 6]</a></code>
+                           </span></span><div class='docblock'><p>Client library sqlstate buffer. Set along with the error message. </p>
+</div><span id="structfield.extension" class="structfield small-section-header">
+                           <a href="#structfield.extension" class="anchor field"></a>
+                           <span id="extension.v" class='invisible'>
+                           <code>extension: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="enum" href="https://doc.rust-lang.org/nightly/std/os/raw/enum.c_void.html" title="enum std::os::raw::c_void">c_void</a></code>
+                           </span></span><div class='docblock'><p>Extension pointer, for the caller private use.
+Any program linking with the networking library can use this pointer,
+which is handy when private connection specific data needs to be
+maintained.
+The mysqld server process uses this pointer internally,
+to maintain the server internal instrumentation for the connection.</p>
+</div>
+                <h2 id='synthetic-implementations' class='small-section-header'>
+                  Auto Trait Implementations<a href='#synthetic-implementations' class='anchor'></a>
+                </h2>
+                <div id='synthetic-implementations-list'>
+            <h3 id='impl-Send' class='impl'><span class='in-band'><table class='table-display'><tbody><tr><td><code>impl !<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> for <a class="struct" href="../mysqlclient_sys/struct.st_net.html" title="struct mysqlclient_sys::st_net">st_net</a></code><a href='#impl-Send' class='anchor'></a></span></td><td><span class='out-of-band'></span></td></tr></tbody></table></h3><div class='impl-items'></div><h3 id='impl-Sync' class='impl'><span class='in-band'><table class='table-display'><tbody><tr><td><code>impl !<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a> for <a class="struct" href="../mysqlclient_sys/struct.st_net.html" title="struct mysqlclient_sys::st_net">st_net</a></code><a href='#impl-Sync' class='anchor'></a></span></td><td><span class='out-of-band'></span></td></tr></tbody></table></h3><div class='impl-items'></div></div></section><section id="search" class="content hidden"></section><section class="footer"></section><aside id="help" class="hidden"><div><h1 class="hidden">Help</h1><div class="shortcuts"><h2>Keyboard Shortcuts</h2><dl><dt><kbd>?</kbd></dt><dd>Show this help dialog</dd><dt><kbd>S</kbd></dt><dd>Focus the search field</dd><dt><kbd>↑</kbd></dt><dd>Move up in search results</dd><dt><kbd>↓</kbd></dt><dd>Move down in search results</dd><dt><kbd>↹</kbd></dt><dd>Switch tab</dd><dt><kbd>&#9166;</kbd></dt><dd>Go to active search result</dd><dt><kbd>+</kbd></dt><dd>Expand all sections</dd><dt><kbd>-</kbd></dt><dd>Collapse all sections</dd></dl></div><div class="infos"><h2>Search Tricks</h2><p>Prefix searches with a type followed by a colon (e.g. <code>fn:</code>) to restrict the search to a given type.</p><p>Accepted types are: <code>fn</code>, <code>mod</code>, <code>struct</code>, <code>enum</code>, <code>trait</code>, <code>type</code>, <code>macro</code>, and <code>const</code>.</p><p>Search functions by type signature (e.g. <code>vec -> usize</code> or <code>* -> vec</code>)</p><p>Search multiple things at once by splitting your query with comma (e.g. <code>str,u8</code> or <code>String,struct:Vec,test</code>)</p></div></div></aside><script>window.rootPath = "../";window.currentCrate = "mysqlclient_sys";</script><script src="../aliases.js"></script><script src="../main.js"></script><script defer src="../search-index.js"></script></body></html>
