@@ -24,7 +24,7 @@ use diesel::pg::PgConnection;
 // Failure (error management system) Imports
 use failure::Error;
 
-use super::SqlIdentity;
+use super::{SqlIdentity, SqlIdentityError};
 
 table! {
     identities (id) {
