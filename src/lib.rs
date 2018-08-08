@@ -470,10 +470,11 @@ impl<S> IdentityPolicy<S> for SqlIdentityPolicy {
     /// * `req` - The HTTP request recieved
     fn from_request(&self, req: &HttpRequest<S>) -> Self::Future {
         let inner = Rc::clone(&self.0);
-        let ip = req.connection_info()
+        let conn_ip = req.connection_info()
             .remote()
-            .unwrap_or("0.0.0.0")
+            .map_or("0.0.0.0", |s| s.split(":").nth(0).unwrap())
             .to_owned();
+
         let unk = HeaderValue::from_static("Unknown");
         let ua = req.headers()
             .get("user-agent")
@@ -484,16 +485,12 @@ impl<S> IdentityPolicy<S> for SqlIdentityPolicy {
 
         Box::new(self.0.load(req).map(move |ident| {
             if let Some(id) = ident {
-                let uip = match id.ip {
-                    Some(ref nip) if &ip == nip => nip.clone(),
-                    _ =>  ip,
-                };
 
                 SqlIdentity {
                     id: id.id,
                     identity: Some(id.userid),
                     token: Some(id.token),
-                    ip: Some(uip),
+                    ip: Some(conn_ip),
                     user_agent: Some(ua),
                     created: id.created,
                     state: SqlIdentityState::Updated,
@@ -504,7 +501,7 @@ impl<S> IdentityPolicy<S> for SqlIdentityPolicy {
                     id: -1,
                     identity: None,
                     token: None,
-                    ip: Some(ip),
+                    ip: Some(conn_ip),
                     user_agent: Some(ua),
                     created: Utc::now().naive_utc(),
                     state: SqlIdentityState::Unchanged,
